@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Origin Studios — OpenClaw Blueprint System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --black:#080808;--white:#f5f2ee;--gold:#c9a84c;--gold-dim:#8a6f32;--red:#c0392b;
+  --surface:#111111;--surface2:#1a1a1a;--surface3:#222222;
+  --border:#2a2a2a;--border2:#333333;
+  --text:#f5f2ee;--text-dim:#8a8580;--text-muted:#555550;
+  --fd:'Syne',sans-serif;--fb:'Cormorant Garamond',serif;--fm:'DM Mono',monospace;
+  --r:2px;
+}
+[data-theme="light"]{
+  --black:#f8f6f2;--white:#1a1a1a;--surface:#ffffff;--surface2:#f0ede8;--surface3:#e8e4df;
+  --border:#d8d4ce;--border2:#ccc8c2;--text:#1a1a1a;--text-dim:#5a5650;--text-muted:#9a9690;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--black);color:var(--text);font-family:var(--fb);font-size:16px;line-height:1.7;min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:.3}
+.page{display:none;min-height:100vh}
+.page.active{display:flex;flex-direction:column}
+
+/* ── LOADER ── */
+#loader{position:fixed;inset:0;background:var(--black);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:2.5rem}
+#loader.out{animation:loaderZoomOut .75s cubic-bezier(.55,0,1,.45) both;pointer-events:none}
+@keyframes loaderZoomOut{
+  0%  {opacity:1;transform:scale3d(1,1,1)}
+  50% {opacity:0;transform:scale3d(.15,.15,.15)}
+  100%{opacity:0;transform:scale3d(.15,.15,.15)}
+}
+.ld-mark{width:88px;height:88px;display:flex;align-items:center;justify-content:center;animation:ldGlow 2.5s ease-in-out infinite}
+.ld-mark img{width:88px;height:88px;object-fit:contain;filter:drop-shadow(0 0 18px rgba(201,168,76,.55))}
+@keyframes ldGlow{0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0)}50%{box-shadow:0 0 28px 4px rgba(201,168,76,.22)}}
+.ld-name{
+  font-family:'Syne',sans-serif;
+  font-weight:800;
+  font-style:normal;
+  font-size:clamp(3rem,8vw,5.5rem);
+  letter-spacing:-.03em;
+  color:var(--white);
+  line-height:1;
+  text-align:center;
+  white-space:nowrap;
+  animation:ldUp .9s cubic-bezier(.2,0,0,1) both
+}
+.ld-name .ln-light{
+  color:var(--gold)
+}
+.ld-sub{font-family:var(--fm);font-size:.68rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);animation:ldUp .9s .15s cubic-bezier(.2,0,0,1) both}
+.ld-bars{display:flex;align-items:flex-end;gap:5px;height:48px;animation:ldUp .9s .25s cubic-bezier(.2,0,0,1) both}
+.mb{width:5px;background:var(--gold);border-radius:3px 3px 0 0;animation:mb var(--d) ease-in-out infinite alternate;opacity:.85}
+.mb:nth-child(1){--d:.55s;height:18px;animation-delay:0s}
+.mb:nth-child(2){--d:.40s;height:32px;animation-delay:.10s}
+.mb:nth-child(3){--d:.65s;height:44px;animation-delay:.05s}
+.mb:nth-child(4){--d:.35s;height:26px;animation-delay:.20s}
+.mb:nth-child(5){--d:.50s;height:48px;animation-delay:.12s}
+.mb:nth-child(6){--d:.45s;height:36px;animation-delay:.08s}
+.mb:nth-child(7){--d:.60s;height:22px;animation-delay:.18s}
+.mb:nth-child(8){--d:.38s;height:40px;animation-delay:.03s}
+.mb:nth-child(9){--d:.52s;height:30px;animation-delay:.15s}
+.mb:nth-child(10){--d:.43s;height:46px;animation-delay:.07s}
+.mb:nth-child(11){--d:.58s;height:20px;animation-delay:.22s}
+.mb:nth-child(12){--d:.47s;height:38px;animation-delay:.11s}
+@keyframes mb{from{transform:scaleY(.15);opacity:.25}to{transform:scaleY(1);opacity:1}}
+.ld-tag{font-family:var(--fb);font-style:italic;font-size:1rem;color:var(--text-muted);animation:ldUp .9s .35s cubic-bezier(.2,0,0,1) both}
+@keyframes ldUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── GEN LOADER ── */
+.gen-overlay{position:fixed;inset:0;background:rgba(8,8,8,.92);backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:8000;gap:1.5rem;transition:opacity .6s,transform .6s}
+.gen-overlay.out{opacity:0;transform:scale(1.05);pointer-events:none}
+.gen-title{font-family:var(--fd);font-size:1.6rem;font-weight:800;letter-spacing:-.02em;color:var(--white)}
+.gen-sub{font-family:var(--fm);font-size:.68rem;letter-spacing:.2em;color:var(--gold);text-transform:uppercase}
+
+/* ── AUTH ── */
+.auth-wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+.auth-brand{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between;padding:3rem;position:relative;overflow:hidden}
+.auth-brand::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 70%,rgba(201,168,76,.06) 0%,transparent 60%);pointer-events:none}
+.brand-logo{width:56px;height:56px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.brand-big{font-family:var(--fd);font-size:2.8rem;font-weight:800;letter-spacing:-.04em;color:var(--white);line-height:1;margin-top:1.5rem}
+.brand-tag{font-family:var(--fb);font-style:italic;color:var(--gold);font-size:1.05rem;margin-top:.3rem}
+.brand-desc{color:var(--text-dim);font-size:.92rem;line-height:1.7;margin-top:1.2rem;max-width:360px}
+.waveform{display:flex;align-items:center;gap:3px;height:36px}
+.wbar{width:3px;background:var(--gold);opacity:.4;border-radius:2px;animation:wave var(--wd) ease-in-out infinite}
+@keyframes wave{0%,100%{height:15%;opacity:.2}50%{height:100%;opacity:.7}}
+.brand-foot{font-family:var(--fm);font-size:.62rem;color:var(--text-muted);letter-spacing:.12em;text-transform:uppercase}
+.auth-form-area{display:flex;align-items:center;justify-content:center;padding:2.5rem;background:var(--black)}
+.auth-card{width:100%;max-width:420px}
+.auth-title{font-family:var(--fd);font-size:1.8rem;font-weight:700;letter-spacing:-.02em;color:var(--white);margin-bottom:.25rem}
+.auth-sub{color:var(--text-dim);font-size:.85rem;margin-bottom:2rem;font-family:var(--fm);letter-spacing:.05em}
+.field{margin-bottom:1rem}
+.field label{display:block;font-family:var(--fm);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.35rem}
+.field input{width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);font-family:var(--fm);font-size:.88rem;padding:.72rem 1rem;outline:none;transition:border-color .2s,box-shadow .2s;border-radius:var(--r)}
+.field input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.08)}
+.field input::placeholder{color:var(--text-muted)}
+/* password eye toggle */
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:2.8rem}
+.eye-btn{position:absolute;right:.75rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:0;line-height:1;transition:color .15s;display:flex;align-items:center;justify-content:center}
+.eye-btn:hover{color:var(--gold)}
+/* cursor glow on auth-brand */
+.auth-brand{cursor:none}
+/* fluid canvas per brand panel */
+.auth-brand-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.85}
+.btn-p{width:100%;background:var(--gold);color:#000;border:none;font-family:var(--fd);font-weight:700;font-size:.92rem;letter-spacing:.06em;text-transform:uppercase;padding:.82rem;cursor:pointer;transition:opacity .2s,transform .1s;border-radius:var(--r);margin-top:.4rem}
+.btn-p:hover{opacity:.88}
+.btn-p:active{transform:scale(.99)}
+.btn-p:disabled{opacity:.35;cursor:not-allowed}
+.auth-sw{text-align:center;margin-top:1.2rem;font-size:.9rem;color:var(--text-dim)}
+.auth-sw a{color:var(--gold);cursor:pointer}
+.auth-sw a:hover{text-decoration:underline}
+.msg{padding:.65rem 1rem;border-radius:var(--r);font-family:var(--fm);font-size:.75rem;margin-bottom:.9rem;display:none}
+.msg.error{background:rgba(192,57,43,.14);border:1px solid rgba(192,57,43,.4);color:#e74c3c}
+.msg.success{background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);color:#27ae60}
+.msg.show{display:block}
+.auth-links{display:flex;justify-content:space-between;margin-top:.75rem;font-family:var(--fm);font-size:.68rem}
+.auth-links a{color:var(--text-muted);cursor:pointer;transition:color .15s}
+.auth-links a:hover{color:var(--gold)}
+
+/* ── DASHBOARD ── */
+.dashboard{display:grid;grid-template-columns:256px 1fr;min-height:100vh}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.5rem 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb-logo{padding:0 1.25rem 1.5rem;border-bottom:1px solid var(--border);margin-bottom:1.2rem}
+.sb-mark{width:40px;height:40px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:.6rem}
+.sb-name{font-family:var(--fd);font-weight:800;font-size:1.05rem;letter-spacing:-.02em;color:var(--white)}
+.sb-ver{font-family:var(--fm);font-size:.6rem;color:var(--text-muted);letter-spacing:.1em}
+.sb-nav{flex:1;padding:0 .6rem;display:flex;flex-direction:column;gap:.15rem}
+.sb-sec{font-family:var(--fm);font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text-muted);padding:.4rem .7rem;margin-top:.8rem}
+.nav-item{display:flex;align-items:center;gap:.65rem;padding:.55rem .7rem;border-radius:var(--r);cursor:pointer;transition:background .15s,color .15s;font-family:var(--fm);font-size:.78rem;color:var(--text-dim);border:1px solid transparent}
+.nav-item:hover{background:var(--surface2);color:var(--white)}
+.nav-item.active{background:rgba(201,168,76,.1);color:var(--gold);border-color:rgba(201,168,76,.2)}
+.nav-item .ni{font-size:.95rem;width:18px;text-align:center}
+.sb-footer{padding:1.25rem;border-top:1px solid var(--border);margin-top:auto}
+.user-chip{display:flex;align-items:center;gap:.65rem}
+.u-av{width:30px;height:30px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;font-size:.82rem;color:var(--gold);background:var(--surface2);flex-shrink:0}
+.u-info{flex:1;overflow:hidden}
+.u-name{font-family:var(--fm);font-size:.72rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u-role{font-family:var(--fm);font-size:.6rem;color:var(--text-muted)}
+.btn-out{background:none;border:1px solid var(--border2);color:var(--text-muted);font-family:var(--fm);font-size:.62rem;padding:.28rem .55rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
+.btn-out:hover{border-color:var(--red);color:var(--red)}
+.main-content{background:var(--black);overflow-y:auto}
+.ch{padding:1.75rem 2.25rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-family:var(--fd);font-size:1.5rem;font-weight:800;letter-spacing:-.03em}
+.ch-sub{font-family:var(--fm);font-size:.7rem;color:var(--text-muted);margin-top:.15rem;letter-spacing:.07em}
+.cb{padding:1.75rem 2.25rem}
+.theme-btn{background:none;border:1px solid var(--border2);color:var(--text-dim);font-size:1rem;width:34px;height:34px;border-radius:var(--r);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.theme-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.75rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);padding:1.4rem;border-radius:var(--r);position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);opacity:.4}
+.stat-lbl{font-family:var(--fm);font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem}
+.stat-val{font-family:var(--fd);font-size:2rem;font-weight:800;color:var(--white);letter-spacing:-.04em;line-height:1}
+.stat-sub{font-size:.8rem;color:var(--text-dim);margin-top:.25rem;font-style:italic}
+
+/* ── INTERVIEW ── */
+.interview-wrap{display:grid;grid-template-columns:1fr 340px;gap:1.25rem;height:calc(100vh - 130px)}
+.chat-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);display:flex;flex-direction:column;overflow:hidden}
+.chat-hdr{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.85rem}
+.ai-av{width:38px;height:38px;background:var(--surface2);border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.1rem;position:relative}
+.ai-pulse{position:absolute;bottom:-2px;right:-2px;width:9px;height:9px;border-radius:50%;background:var(--gold);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}}
+.ai-nm{font-family:var(--fd);font-weight:700;font-size:.95rem}
+.ai-st{font-family:var(--fm);font-size:.62rem;color:var(--gold);letter-spacing:.08em}
+.prog-pill{margin-left:auto;background:var(--surface2);border:1px solid var(--border2);padding:.25rem .65rem;border-radius:20px;font-family:var(--fm);font-size:.68rem;color:var(--text-dim)}
+.prog-pill span{color:var(--gold);font-weight:500}
+.chat-msgs{flex:1;overflow-y:auto;padding:1.4rem;display:flex;flex-direction:column;gap:1.1rem;scroll-behavior:smooth}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.bubble{display:flex;gap:.65rem;align-items:flex-start;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.bubble.user{flex-direction:row-reverse}
+.bav{width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-family:var(--fd);font-weight:700;border:1px solid var(--border2)}
+.bav.ai-bav{background:var(--surface2);color:var(--gold)}
+.bav.u-bav{background:var(--surface3);color:var(--white)}
+.bcon{max-width:76%}
+.bname{font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;color:var(--text-muted);margin-bottom:.25rem}
+.bubble.user .bname{text-align:right}
+.btxt{background:var(--surface2);border:1px solid var(--border2);padding:.9rem 1.1rem;border-radius:0 8px 8px 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:1rem;line-height:1.75;color:var(--text);position:relative;letter-spacing:.01em}
+.bubble.user .btxt{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.22);border-radius:8px 0 8px 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:1rem;line-height:1.75;color:var(--white);letter-spacing:.01em}
+.copy-btn{position:absolute;bottom:5px;right:6px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.72rem;padding:2px 5px;opacity:0;transition:opacity .15s;border-radius:3px}
+.btxt:hover .copy-btn{opacity:1}
+.copy-btn:hover{color:var(--gold);background:rgba(201,168,76,.1)}
+.typing-ind{display:flex;gap:4px;padding:.75rem .95rem;background:var(--surface2);border:1px solid var(--border2);border-radius:0 8px 8px 8px;width:fit-content}
+.td{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:typing 1.2s ease-in-out infinite}
+.td:nth-child(2){animation-delay:.2s}
+.td:nth-child(3){animation-delay:.4s}
+@keyframes typing{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
+.chat-input{padding:1.1rem 1.4rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:.65rem}
+.inp-row{display:flex;gap:.6rem;align-items:flex-end}
+.chat-ta{flex:1;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:var(--fb);font-size:.93rem;padding:.7rem .95rem;outline:none;resize:none;min-height:44px;max-height:130px;border-radius:var(--r);transition:border-color .2s;line-height:1.5}
+.chat-ta:focus{border-color:var(--gold)}
+.chat-ta::placeholder{color:var(--text-muted)}
+.btn-send{width:44px;height:44px;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;border-radius:var(--r);transition:opacity .2s;flex-shrink:0}
+.btn-send:hover{opacity:.85}
+.btn-send:disabled{opacity:.3;cursor:not-allowed}
+.mic-btn{width:44px;height:44px;background:var(--surface2);border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;border-radius:var(--r);transition:all .2s;flex-shrink:0;color:var(--text-dim)}
+.mic-btn:hover{border-color:var(--gold);color:var(--gold)}
+.mic-btn.rec{background:rgba(192,57,43,.18);border-color:var(--red);color:var(--red);animation:micP 1s ease-in-out infinite}
+@keyframes micP{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.4)}50%{box-shadow:0 0 0 7px rgba(192,57,43,0)}}
+.chips{display:flex;gap:.4rem;flex-wrap:wrap}
+.chip{background:var(--surface2);border:1px solid var(--border2);color:var(--text-dim);font-family:var(--fm);font-size:.63rem;padding:.27rem .58rem;border-radius:20px;cursor:pointer;transition:all .15s}
+.chip:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── SIDE PANEL ── */
+.side-panel{display:flex;flex-direction:column;gap:1rem;overflow-y:auto}
+.pc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.pch{padding:.9rem 1.1rem;border-bottom:1px solid var(--border);font-family:var(--fm);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);display:flex;justify-content:space-between;align-items:center}
+.pcb{padding:1.1rem}
+.sec-prog{display:flex;flex-direction:column;gap:.35rem}
+.si{display:flex;align-items:center;gap:.55rem;font-family:var(--fm);font-size:.7rem;color:var(--text-dim);padding:.22rem 0}
+.sdot{width:7px;height:7px;border-radius:50%;border:1px solid var(--border2);flex-shrink:0;transition:all .3s}
+.sdot.done{background:var(--gold);border-color:var(--gold)}
+.sdot.act{border-color:var(--gold);animation:aPulse 1.5s ease-in-out infinite}
+@keyframes aPulse{0%,100%{box-shadow:0 0 5px rgba(201,168,76,.5)}50%{box-shadow:0 0 11px rgba(201,168,76,.9)}}
+.si.done-i{color:var(--text-muted);text-decoration:line-through}
+.si.act-i{color:var(--gold)}
+.obar{height:3px;background:var(--surface2);border-radius:2px;margin-bottom:.4rem;overflow:hidden}
+.ofill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:2px;transition:width .5s ease}
+.btn-s{width:100%;background:none;border:1px solid var(--border2);color:var(--text-dim);font-family:var(--fm);font-size:.72rem;letter-spacing:.07em;padding:.6rem 1rem;cursor:pointer;border-radius:var(--r);transition:all .2s;text-transform:uppercase;margin-top:.4rem}
+.btn-s:hover{border-color:var(--gold);color:var(--gold)}
+.btn-gen{width:100%;background:linear-gradient(135deg,var(--gold-dim),var(--gold));border:none;color:#000;font-family:var(--fd);font-weight:700;font-size:.88rem;letter-spacing:.04em;padding:.82rem 1rem;cursor:pointer;border-radius:var(--r);transition:opacity .2s;text-transform:uppercase;margin-top:.4rem}
+.btn-gen:hover{opacity:.9}
+.btn-gen:disabled{opacity:.3;cursor:not-allowed}
+
+/* ── FOLLOWUP BANNER ── */
+.followup-banner{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.3);border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:1rem;display:none}
+.followup-banner.show{display:block}
+.fu-title{font-family:var(--fd);font-weight:700;color:var(--gold);font-size:.95rem;margin-bottom:.3rem;display:flex;align-items:center;gap:.5rem}
+.fu-msg{font-size:.88rem;color:var(--text-dim);font-style:italic}
+
+/* ── DOCUMENTS PAGE ── */
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
+.doc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.4rem;cursor:pointer;transition:border-color .2s,transform .15s}
+.doc-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+.doc-type{font-family:var(--fm);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.65rem}
+.doc-title{font-family:var(--fd);font-size:1.15rem;font-weight:700;color:var(--white);margin-bottom:.25rem;letter-spacing:-.01em}
+.doc-client{font-size:.85rem;color:var(--text-dim);font-style:italic;margin-bottom:.85rem}
+.doc-meta{display:flex;gap:.85rem;flex-wrap:wrap}
+.dmi{font-family:var(--fm);font-size:.63rem;color:var(--text-muted)}
+.doc-actions{display:flex;gap:.45rem;margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--border)}
+.btn-sm{flex:1;background:none;border:1px solid var(--border2);color:var(--text-dim);font-family:var(--fm);font-size:.63rem;padding:.38rem .55rem;cursor:pointer;border-radius:var(--r);transition:all .15s;text-align:center}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold)}
+.version-badge{display:inline-block;padding:.1rem .45rem;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.25);color:var(--gold);font-family:var(--fm);font-size:.58rem;border-radius:20px;margin-left:.4rem}
+
+/* ── MODAL ── */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;z-index:500;padding:1.5rem}
+.modal-ov.open{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:4px;width:100%;max-width:820px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-hdr{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:var(--fd);font-weight:700;font-size:1.05rem}
+.modal-cls{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.15rem;padding:.2rem;transition:color .2s}
+.modal-cls:hover{color:var(--white)}
+.modal-body{flex:1;overflow-y:auto;padding:2rem}
+.modal-ft{padding:.9rem 1.4rem;border-top:1px solid var(--border);display:flex;gap:.65rem;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── DOC PREVIEW ── */
+.doc-preview{font-family:var(--fb);color:var(--text);line-height:1.8}
+.doc-preview .dp-header{border-bottom:2px solid var(--gold);padding-bottom:1.5rem;margin-bottom:1.75rem}
+.doc-preview .dp-brand{font-family:var(--fm);font-size:.62rem;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;margin-bottom:.5rem}
+.doc-preview h1{font-family:var(--fd);font-size:1.9rem;font-weight:800;letter-spacing:-.03em;color:var(--white);margin-bottom:.3rem}
+.doc-preview .dp-sub{font-style:italic;color:var(--text-dim);font-size:.95rem}
+.doc-preview .dp-meta{display:grid;grid-template-columns:1fr 1fr;gap:.45rem 2rem;background:var(--surface2);padding:.9rem 1.1rem;border-radius:var(--r);margin-bottom:1.5rem;font-size:.9rem}
+.doc-preview .mkey{font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase}
+.doc-preview .mval{font-style:italic;color:var(--text)}
+.doc-preview h2{font-family:var(--fd);font-size:1.2rem;font-weight:700;color:var(--gold);margin:2rem 0 .65rem;padding-bottom:.3rem;border-bottom:1px solid rgba(201,168,76,.18);letter-spacing:-.01em}
+.doc-preview h3{font-family:var(--fm);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);margin:1.1rem 0 .35rem}
+.doc-preview p{margin-bottom:.65rem;font-size:.98rem}
+.doc-preview ul{margin:.35rem 0 .75rem 1.5rem}
+.doc-preview ul li{margin-bottom:.3rem;font-size:.96rem}
+.doc-preview table{width:100%;border-collapse:collapse;margin:.75rem 0 1.25rem;font-size:.88rem}
+.doc-preview table th{background:var(--surface2);font-family:var(--fm);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);padding:.55rem .75rem;text-align:left;border:1px solid var(--border)}
+.doc-preview table td{padding:.55rem .75rem;border:1px solid var(--border);vertical-align:top}
+.doc-preview .sec-block{background:var(--surface2);border-left:3px solid var(--gold);padding:1rem 1.25rem;border-radius:0 var(--r) var(--r) 0;margin-bottom:.85rem}
+.doc-preview .dp-footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);font-family:var(--fm);font-size:.62rem;color:var(--text-muted);text-align:center}
+
+/* ── SETTINGS ── */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.sch{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.65rem}
+.sc-icon{font-size:1.1rem}
+.sc-title{font-family:var(--fd);font-weight:700;font-size:.95rem}
+.scb{padding:1.4rem}
+.model-opt{display:flex;align-items:center;gap:.65rem;padding:.65rem .9rem;border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;transition:all .15s;margin-bottom:.5rem}
+.model-opt:hover{border-color:var(--gold)}
+.model-opt.sel{border-color:var(--gold);background:rgba(201,168,76,.06)}
+.mradio{width:13px;height:13px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.model-opt.sel .mradio{border-color:var(--gold)}
+.model-opt.sel .mradio::after{content:'';width:5px;height:5px;background:var(--gold);border-radius:50%;display:block}
+.mname{font-family:var(--fm);font-size:.78rem;color:var(--white)}
+.mprov{font-family:var(--fm);font-size:.62rem;color:var(--text-muted);margin-left:auto}
+
+/* ── ADMIN TABLE ── */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;overflow-x:auto}
+.atbl{width:100%;border-collapse:collapse;min-width:600px}
+.atbl th{background:var(--surface2);font-family:var(--fm);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);padding:.75rem .95rem;text-align:left;border-bottom:1px solid var(--border)}
+.atbl td{padding:.85rem .95rem;border-bottom:1px solid var(--border);font-size:.85rem;color:var(--text);vertical-align:middle}
+.atbl tr:last-child td{border-bottom:none}
+.atbl tr:hover td{background:rgba(255,255,255,.01)}
+.badge{display:inline-block;padding:.13rem .45rem;border-radius:20px;font-family:var(--fm);font-size:.58rem;letter-spacing:.07em;text-transform:uppercase}
+.badge.gold{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.3)}
+.badge.gray{background:var(--surface2);color:var(--text-muted);border:1px solid var(--border2)}
+.badge.red{background:rgba(192,57,43,.15);color:#e74c3c;border:1px solid rgba(192,57,43,.3)}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:4rem 2rem;color:var(--text-muted)}
+.empty .ei{font-size:2.8rem;margin-bottom:.85rem}
+.empty .et{font-family:var(--fd);font-size:1.25rem;font-weight:700;color:var(--text-dim);margin-bottom:.4rem}
+.empty .es{font-size:.9rem;font-style:italic}
+
+/* ── NOTIFICATION BADGE ── */
+.notif-dot{width:8px;height:8px;background:var(--red);border-radius:50%;display:inline-block;margin-left:.3rem;animation:notifPulse 1.5s ease-in-out infinite}
+@keyframes notifPulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* responsive */
+@media(max-width:900px){
+  .auth-wrap{grid-template-columns:1fr}
+  .auth-brand{display:none}
+  .dashboard{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .interview-wrap{grid-template-columns:1fr}
+  .side-panel{display:none}
+  .settings-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:.75rem;animation:ldUp .9s cubic-bezier(.2,0,0,1) both">
+    <div class="ld-mark"><img src="https://gcdnb.pbrd.co/images/cESDQSOpSR4B.png" alt="Origin Studios"></div>
+    <div class="ld-name">ORIGIN <span class="ln-light">STUDIOS</span></div>
+    <div class="ld-sub">Blueprint System</div>
+  </div>
+  <div class="ld-bars">
+    <div class="mb"></div><div class="mb"></div><div class="mb"></div>
+    <div class="mb"></div><div class="mb"></div><div class="mb"></div>
+    <div class="mb"></div><div class="mb"></div><div class="mb"></div>
+    <div class="mb"></div><div class="mb"></div><div class="mb"></div>
+  </div>
+  <div class="ld-tag">Where Technology Meets Sound</div>
+</div>
+
+<!-- SIGNUP -->
+<div class="page" id="signupPage">
+<div class="auth-wrap">
+  <div class="auth-brand">
+    <canvas class="auth-brand-canvas"></canvas>
+    <div>
+      <div class="brand-logo"><img src="https://gcdnb.pbrd.co/images/cESDQSOpSR4B.png" alt="Origin Studios logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="brand-big">Origin<br/>Studios</div>
+      <div class="brand-tag">Where Technology Meets Sound</div>
+      <div class="brand-desc">The OpenClaw Blueprint System — intelligent requirements gathering that transforms client conversations into comprehensive technical documents.</div>
+    </div>
+    <div>
+      <div class="waveform" id="wv1"></div>
+      <div class="brand-foot" style="margin-top:.75rem">© 2026 Origin Studios · Blueprint System v2.0</div>
+    </div>
+  </div>
+  <div class="auth-form-area">
+    <div class="auth-card">
+      <div class="auth-title">Create Account</div>
+      <div class="auth-sub">// Join Origin Studios Blueprint System</div>
+      <div class="msg" id="signupMsg"></div>
+      <div class="field"><label>Full Name</label><input type="text" id="sn_name" placeholder="Your full name"/></div>
+      <div class="field"><label>Email Address</label><input type="email" id="sn_email" placeholder="name@company.com"/></div>
+      <div class="field"><label>Company / Organization</label><input type="text" id="sn_company" placeholder="Your company name"/></div>
+      <div class="field"><label>Password (min 8 chars)</label><div class="pw-wrap"><input type="password" id="sn_pass" placeholder="••••••••"/><button type="button" class="eye-btn" onclick="toggleEye('sn_pass')" tabindex="-1">👁</button></div></div>
+      <button class="btn-p" onclick="doSignup()">Create Account →</button>
+      <div class="auth-sw">Already have an account? <a onclick="show('signinPage')">Sign In</a></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- SIGNIN -->
+<div class="page" id="signinPage">
+<div class="auth-wrap">
+  <div class="auth-brand">
+    <canvas class="auth-brand-canvas"></canvas>
+    <div>
+      <div class="brand-logo"><img src="https://gcdnb.pbrd.co/images/cESDQSOpSR4B.png" alt="Origin Studios logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="brand-big">Origin<br/>Studios</div>
+      <div class="brand-tag">Where Technology Meets Sound</div>
+      <div class="brand-desc">Sign in to access your client blueprints and continue intelligent requirements gathering sessions.</div>
+    </div>
+    <div>
+      <div class="waveform" id="wv2"></div>
+      <div class="brand-foot" style="margin-top:.75rem">© 2026 Origin Studios · Blueprint System v2.0</div>
+    </div>
+  </div>
+  <div class="auth-form-area">
+    <div class="auth-card">
+      <div class="auth-title">Welcome Back</div>
+      <div class="auth-sub">// Sign in to your workspace</div>
+      <div class="msg" id="signinMsg"></div>
+      <div class="field"><label>Email Address</label><input type="email" id="si_email" placeholder="name@company.com"/></div>
+      <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="si_pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSignin()"/><button type="button" class="eye-btn" onclick="toggleEye('si_pass')" tabindex="-1">👁</button></div></div>
+      <button class="btn-p" onclick="doSignin()">Sign In →</button>
+      <div class="auth-links">
+        <a onclick="show('forgotPage')">Forgot password?</a>
+        <a onclick="show('adminLoginPage')">Admin access →</a>
+      </div>
+      <div class="auth-sw">No account? <a onclick="show('signupPage')">Sign Up</a></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FORGOT PASSWORD -->
+<div class="page" id="forgotPage">
+<div class="auth-wrap">
+  <div class="auth-brand">
+    <canvas class="auth-brand-canvas"></canvas>
+    <div>
+      <div class="brand-logo"><img src="https://gcdnb.pbrd.co/images/cESDQSOpSR4B.png" alt="Origin Studios logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="brand-big">Origin<br/>Studios</div>
+      <div class="brand-tag">Password Reset</div>
+      <div class="brand-desc">Enter your email address and we'll let you set a new password — no verification needed.</div>
+    </div>
+    <div><div class="waveform" id="wv3"></div></div>
+  </div>
+  <div class="auth-form-area">
+    <div class="auth-card">
+      <div class="auth-title">Reset Password</div>
+      <div class="auth-sub">// No verification required</div>
+      <div class="msg" id="forgotMsg"></div>
+      <div class="field"><label>Email Address</label><input type="email" id="fp_email" placeholder="name@company.com"/></div>
+      <div id="fp_newFields" style="display:none">
+        <div class="field"><label>New Password</label><div class="pw-wrap"><input type="password" id="fp_pass" placeholder="Min 8 characters"/><button type="button" class="eye-btn" onclick="toggleEye('fp_pass')" tabindex="-1">👁</button></div></div>
+        <div class="field"><label>Confirm Password</label><div class="pw-wrap"><input type="password" id="fp_pass2" placeholder="Repeat password"/><button type="button" class="eye-btn" onclick="toggleEye('fp_pass2')" tabindex="-1">👁</button></div></div>
+      </div>
+      <button class="btn-p" id="fp_btn" onclick="doForgot()">Find Account →</button>
+      <div class="auth-sw"><a onclick="show('signinPage')">← Back to Sign In</a></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div class="page" id="adminLoginPage">
+<div class="auth-wrap">
+  <div class="auth-brand">
+    <canvas class="auth-brand-canvas"></canvas>
+    <div>
+      <div class="brand-logo"><img src="https://gcdnb.pbrd.co/images/cESDQSOpSR4B.png" alt="Origin Studios logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="brand-big">Origin<br/>Studios</div>
+      <div class="brand-tag" style="color:var(--red)">Admin · Restricted Access</div>
+      <div class="brand-desc">Full system control — manage users, blueprints, API keys, follow-up questions, and system settings from one place.</div>
+    </div>
+    <div>
+      <div class="waveform" id="wv4"></div>
+      <div class="brand-foot" style="margin-top:.75rem">© 2026 Origin Studios · Admin Panel</div>
+    </div>
+  </div>
+  <div class="auth-form-area">
+    <div class="auth-card">
+      <div class="auth-title">Admin Login</div>
+      <div class="auth-sub">// Restricted access · All actions logged</div>
+      <div class="msg" id="adminLoginMsg"></div>
+      <div class="field"><label>Username</label><input type="text" id="al_user" placeholder="originstudios"/></div>
+      <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="al_pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAdminLogin()"/><button type="button" class="eye-btn" onclick="toggleEye('al_pass')" tabindex="-1">👁</button></div></div>
+      <button class="btn-p" onclick="doAdminLogin()">Access Admin Panel →</button>
+      <div class="auth-sw"><a onclick="show('signinPage')">← Back to Sign In</a></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- USER DASHBOARD -->
+<div class="page" id="dashPage">
+<div class="dashboard">
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-mark"><img src="https://gcdnb.pbrd.co/images/cESDQSOpSR4B.png" alt="Origin Studios logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="sb-name">Origin Studios</div>
+      <div class="sb-ver">Blueprint System v2.0</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-sec">Workspace</div>
+      <div class="nav-item active" id="nv-home" onclick="sv('home')"><span class="ni">◆</span>Dashboard</div>
+      <div class="nav-item" id="nv-interview" onclick="sv('interview')"><span class="ni">◆</span>New Blueprint</div>
+      <div class="nav-item" id="nv-docs" onclick="sv('docs')"><span class="ni">◆</span>My Blueprints <span id="fuNotif" style="display:none" class="notif-dot"></span></div>
+      <div class="sb-sec">Account</div>
+      <div class="nav-item" id="nv-profile" onclick="sv('profile')"><span class="ni">◆</span>Profile & Password</div>
+    </nav>
+    <div class="sb-footer">
+      <div class="user-chip">
+        <div class="u-av" id="sbAvatar">U</div>
+        <div class="u-info">
+          <div class="u-name" id="sbName">User</div>
+          <div class="u-role">Client Engineer</div>
+        </div>
+        <button class="btn-out" onclick="doLogout()">Out</button>
+      </div>
+    </div>
+  </div>
+  <div class="main-content">
+
+    <!-- HOME -->
+    <div id="view-home">
+      <div class="ch">
+        <div><div class="ch-title">Dashboard</div><div class="ch-sub">// OpenClaw Blueprint Command Center</div></div>
+        <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+      </div>
+      <div class="cb">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-lbl">Total Blueprints</div><div class="stat-val" id="stTotal">0</div><div class="stat-sub">Generated documents</div></div>
+          <div class="stat-card"><div class="stat-lbl">This Month</div><div class="stat-val" id="stMonth">0</div><div class="stat-sub">New blueprints</div></div>
+          <div class="stat-card"><div class="stat-lbl">Active Model</div><div class="stat-val" style="font-size:.95rem;padding-top:.3rem" id="stModel">—</div><div class="stat-sub">AI model in use</div></div>
+          <div class="stat-card"><div class="stat-lbl">API Status</div><div class="stat-val" style="font-size:.95rem;padding-top:.3rem" id="stApi">—</div><div class="stat-sub">Connection status</div></div>
+        </div>
+        <div id="fuAlertHome" class="followup-banner">
+          <div class="fu-title">🔔 Follow-up Questions Pending</div>
+          <div class="fu-msg" id="fuAlertMsg">Our team has questions about your blueprint. Please check your latest document.</div>
+          <button class="btn-s" style="max-width:200px;margin-top:.5rem" onclick="sv('docs')">View Blueprint →</button>
+        </div>
+        <div style="font-family:var(--fm);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.85rem">Recent Blueprints</div>
+        <div id="recentDocs" class="doc-grid"></div>
+      </div>
+    </div>
+
+    <!-- INTERVIEW -->
+    <div id="view-interview" style="display:none">
+      <div class="ch">
+        <div><div class="ch-title">Blueprint Interview</div><div class="ch-sub">// AI-powered requirements gathering</div></div>
+        <div style="display:flex;gap:.5rem">
+          <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+          <button class="btn-s" style="width:auto;margin:0" onclick="resetChat()">↺ Reset</button>
+        </div>
+      </div>
+      <div class="cb" style="padding-bottom:0">
+        <div class="interview-wrap">
+          <div class="chat-panel">
+            <div class="chat-hdr">
+              <div class="ai-av">🎙️<div class="ai-pulse"></div></div>
+              <div>
+                <div class="ai-nm">Blueprint Architect</div>
+                <div class="ai-st">● Active · Origin Studios AI</div>
+              </div>
+              <div class="prog-pill">Section <span id="curSec">1</span>/<span id="totSec">10</span></div>
+            </div>
+            <div class="chat-msgs" id="chatMsgs"></div>
+            <div class="chat-input">
+              <div class="inp-row">
+                <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Voice input">🎤</button>
+                <textarea class="chat-ta" id="chatIn" placeholder="Type your answer or use the mic…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+                <button class="btn-send" id="sendBtn" onclick="sendMsg()">→</button>
+              </div>
+              <div class="chips" id="qchips"></div>
+            </div>
+          </div>
+          <div class="side-panel">
+            <div class="pc">
+              <div class="pch">Progress <span id="progPct">0%</span></div>
+              <div class="pcb">
+                <div class="obar"><div class="ofill" id="oFill" style="width:0%"></div></div>
+                <div class="sec-prog" id="secProg"></div>
+              </div>
+            </div>
+            <div class="pc">
+              <div class="pch">Actions</div>
+              <div class="pcb">
+                <button class="btn-gen" id="genBtn" onclick="genDoc()" disabled>⚡ Generate Blueprint</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCS -->
+    <div id="view-docs" style="display:none">
+      <div class="ch">
+        <div><div class="ch-title">My Blueprints</div><div class="ch-sub">// All generated requirement documents</div></div>
+        <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+      </div>
+      <div class="cb" id="docsContainer"></div>
+    </div>
+
+    <!-- SETTINGS (API keys only for user) -->
+
+
+    <!-- PROFILE -->
+    <div id="view-profile" style="display:none">
+      <div class="ch"><div><div class="ch-title">Profile & Password</div><div class="ch-sub">// Update your account</div></div><button class="theme-btn" onclick="toggleTheme()">🌙</button></div>
+      <div class="cb">
+        <div class="settings-grid">
+          <div class="sc">
+            <div class="sch"><span class="sc-icon">👤</span><div class="sc-title">Profile Info</div></div>
+            <div class="scb">
+              <div class="msg" id="profileMsg"></div>
+              <div class="field"><label>Full Name</label><input type="text" id="p_name" placeholder="Your name"/></div>
+              <div class="field"><label>Company</label><input type="text" id="p_company" placeholder="Your company"/></div>
+              <button class="btn-p" onclick="saveProfile()">Update Profile</button>
+            </div>
+          </div>
+          <div class="sc">
+            <div class="sch"><span class="sc-icon">🔒</span><div class="sc-title">Change Password</div></div>
+            <div class="scb">
+              <div class="msg" id="passMsg"></div>
+              <div class="field"><label>Current Password</label><div class="pw-wrap"><input type="password" id="cp_cur" placeholder="Current password"/><button type="button" class="eye-btn" onclick="toggleEye('cp_cur')" tabindex="-1">👁</button></div></div>
+              <div class="field"><label>New Password</label><div class="pw-wrap"><input type="password" id="cp_new" placeholder="New password (min 8)"/><button type="button" class="eye-btn" onclick="toggleEye('cp_new')" tabindex="-1">👁</button></div></div>
+              <div class="field"><label>Confirm New</label><div class="pw-wrap"><input type="password" id="cp_new2" placeholder="Repeat new password"/><button type="button" class="eye-btn" onclick="toggleEye('cp_new2')" tabindex="-1">👁</button></div></div>
+              <button class="btn-p" onclick="changePassword()">Change Password</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div class="page" id="adminPage">
+<div class="dashboard">
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-mark"><img src="https://gcdnb.pbrd.co/images/cESDQSOpSR4B.png" alt="Origin Studios logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+      <div class="sb-name">Admin Panel</div>
+      <div class="sb-ver">Origin Studios · Full Control</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-sec">Management</div>
+      <div class="nav-item active" id="anv-ahome" onclick="asv('ahome')"><span class="ni">◆</span>Overview</div>
+      <div class="nav-item" id="anv-ausers" onclick="asv('ausers')"><span class="ni">◆</span>Users</div>
+      <div class="nav-item" id="anv-adocs" onclick="asv('adocs')"><span class="ni">◆</span>All Blueprints</div>
+      <div class="nav-item" id="anv-afollowup" onclick="asv('afollowup')"><span class="ni">💬</span>Follow-up Questions</div>
+      <div class="nav-item" id="anv-amodels" onclick="asv('amodels')"><span class="ni">◆</span>AI & API Keys</div>
+      <div class="nav-item" id="anv-asettings" onclick="asv('asettings')"><span class="ni">◆</span>System Settings</div>
+    </nav>
+    <div class="sb-footer">
+      <div class="user-chip">
+        <div class="u-av" style="overflow:hidden;border:none;background:transparent"><img src="https://gcdnb.pbrd.co/images/cESDQSOpSR4B.png" alt="logo" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+        <div class="u-info"><div class="u-name">originstudios</div><div class="u-role" style="color:var(--red)">Admin</div></div>
+        <button class="btn-out" onclick="doLogout()">Out</button>
+      </div>
+    </div>
+  </div>
+  <div class="main-content">
+
+    <div id="aview-ahome">
+      <div class="ch"><div><div class="ch-title">Admin Overview</div><div class="ch-sub">// Origin Studios System Status</div></div><button class="theme-btn" onclick="toggleTheme()">🌙</button></div>
+      <div class="cb">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-lbl">Total Users</div><div class="stat-val" id="adStUsers">—</div></div>
+          <div class="stat-card"><div class="stat-lbl">Total Blueprints</div><div class="stat-val" id="adStDocs">—</div></div>
+          <div class="stat-card"><div class="stat-lbl">Active Model</div><div class="stat-val" style="font-size:.88rem;padding-top:.4rem" id="adStModel">—</div></div>
+          <div class="stat-card"><div class="stat-lbl">Pending Follow-ups</div><div class="stat-val" id="adStFu">0</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="aview-ausers" style="display:none">
+      <div class="ch"><div><div class="ch-title">Users</div><div class="ch-sub">// Manage all accounts</div></div></div>
+      <div class="cb">
+        <div style="margin-bottom:1rem;display:flex;gap:.65rem;flex-wrap:wrap">
+          <button class="btn-s" style="width:auto;margin:0" onclick="showAddUserModal()">+ Add User</button>
+        </div>
+        <div class="tbl-wrap">
+          <table class="atbl">
+            <thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Joined</th><th>Blueprints</th><th>Actions</th></tr></thead>
+            <tbody id="usersTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="aview-adocs" style="display:none">
+      <div class="ch"><div><div class="ch-title">All Blueprints</div><div class="ch-sub">// Every document across all users</div></div></div>
+      <div class="cb">
+        <div class="tbl-wrap">
+          <table class="atbl">
+            <thead><tr><th>Title</th><th>Client</th><th>User</th><th>Version</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody id="docsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="aview-afollowup" style="display:none">
+      <div class="ch"><div><div class="ch-title">Follow-up Questions</div><div class="ch-sub">// Send questions to clients · Trigger re-generation</div></div></div>
+      <div class="cb">
+        <div class="sc" style="margin-bottom:1.25rem">
+          <div class="sch"><span class="sc-icon">💬</span><div class="sc-title">Send Follow-up to Client</div></div>
+          <div class="scb">
+            <div class="msg" id="fuMsg"></div>
+            <div class="field">
+              <label>Select Blueprint / Client</label>
+              <select id="fu_docSel" style="width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:var(--fm);font-size:.85rem;padding:.7rem 1rem;border-radius:var(--r);outline:none">
+                <option value="">— Select a blueprint —</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Your Follow-up Questions</label>
+              <textarea id="fu_questions" placeholder="Write the follow-up questions you need the client to answer. The AI will ask them naturally in the chat interface on the client side." style="width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:var(--fb);font-size:.93rem;padding:.75rem 1rem;border-radius:var(--r);outline:none;resize:vertical;min-height:120px;line-height:1.6"></textarea>
+            </div>
+            <button class="btn-p" onclick="sendFollowUp()">Send Follow-up Questions →</button>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="atbl">
+            <thead><tr><th>Blueprint</th><th>Client</th><th>Questions Sent</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody id="fuTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="aview-amodels" style="display:none">
+      <div class="ch"><div><div class="ch-title">AI & API Keys</div><div class="ch-sub">// Global model configuration</div></div></div>
+      <div class="cb">
+        <div class="settings-grid">
+          <div class="sc">
+            <div class="sch"><span class="sc-icon">🔑</span><div class="sc-title">Global API Keys</div></div>
+            <div class="scb">
+              <div class="msg" id="aKeysMsg"></div>
+              <div class="field"><label>Claude (Anthropic) API Key</label><input type="password" id="a_claudeKey" placeholder="sk-ant-…"/></div>
+              <div class="field"><label>OpenAI API Key</label><input type="password" id="a_openaiKey" placeholder="sk-…"/></div>
+              <button class="btn-p" onclick="saveAdminKeys()">Save API Keys</button>
+              <button class="btn-s" onclick="deleteAdminKey('claude')" style="margin-top:.5rem">Remove Claude Key</button>
+              <button class="btn-s" onclick="deleteAdminKey('openai')">Remove OpenAI Key</button>
+            </div>
+          </div>
+          <div class="sc">
+            <div class="sch"><span class="sc-icon">🤖</span><div class="sc-title">Global Default Model</div></div>
+            <div class="scb">
+              <div id="adminModelSel"></div>
+              <button class="btn-s" onclick="saveAdminModel()">Save Default Model</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="aview-asettings" style="display:none">
+      <div class="ch"><div><div class="ch-title">System Settings</div><div class="ch-sub">// Notification email · Admin config</div></div></div>
+      <div class="cb">
+        <div class="sc" style="max-width:500px">
+          <div class="sch"><span class="sc-icon">📧</span><div class="sc-title">Notification Email</div></div>
+          <div class="scb">
+            <div class="msg" id="aSysMsg"></div>
+            <div class="field"><label>Email for Blueprint Delivery</label><input type="email" id="a_notifEmail" placeholder="admin@originstudios.com"/></div>
+            <div style="background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);padding:.75rem 1rem;border-radius:var(--r);font-family:var(--fm);font-size:.7rem;color:var(--gold);margin-bottom:1rem">
+              ⚡ When a user clicks "Send to Email" on their blueprint, it will be delivered to this address.
+            </div>
+            <button class="btn-p" onclick="saveNotifEmail()">Save Email</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- DOC VIEW MODAL -->
+<div class="modal-ov" id="docModal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modalTitle">Blueprint</div>
+      <button class="modal-cls" onclick="closeModal('docModal')">✕</button>
+    </div>
+    <div class="modal-body"><div class="doc-preview" id="modalContent"></div></div>
+    <div class="modal-ft">
+      <button class="btn-s" style="width:auto;margin:0" onclick="downloadCurrent()">↓ Download</button>
+      <button class="btn-p" style="width:auto" onclick="closeModal('docModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD USER MODAL -->
+<div class="modal-ov" id="addUserModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-hdr"><div class="modal-title">Add New User</div><button class="modal-cls" onclick="closeModal('addUserModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="msg" id="addUserMsg"></div>
+      <div class="field"><label>Full Name</label><input type="text" id="au_name" placeholder="Full name"/></div>
+      <div class="field"><label>Email</label><input type="email" id="au_email" placeholder="email@company.com"/></div>
+      <div class="field"><label>Company</label><input type="text" id="au_company" placeholder="Company name"/></div>
+      <div class="field"><label>Password</label><div class="pw-wrap"><input type="password" id="au_pass" placeholder="Min 8 chars"/><button type="button" class="eye-btn" onclick="toggleEye('au_pass')" tabindex="-1">👁</button></div></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-s" style="width:auto;margin:0" onclick="closeModal('addUserModal')">Cancel</button>
+      <button class="btn-p" style="width:auto" onclick="adminAddUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div class="modal-ov" id="editUserModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-hdr"><div class="modal-title">Edit User</div><button class="modal-cls" onclick="closeModal('editUserModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="msg" id="editUserMsg"></div>
+      <input type="hidden" id="eu_id"/>
+      <div class="field"><label>Full Name</label><input type="text" id="eu_name"/></div>
+      <div class="field"><label>Company</label><input type="text" id="eu_company"/></div>
+      <div class="field"><label>New Password (leave blank to keep)</label><div class="pw-wrap"><input type="password" id="eu_pass" placeholder="Leave blank to keep current"/><button type="button" class="eye-btn" onclick="toggleEye('eu_pass')" tabindex="-1">👁</button></div></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-s" style="width:auto;margin:0" onclick="closeModal('editUserModal')">Cancel</button>
+      <button class="btn-p" style="width:auto" onclick="adminSaveUser()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════════
+const SB_URL='https://erduvesjnwdmikpissey.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVyZHV2ZXNqbndkbWlrcGlzc2V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDk4NzUsImV4cCI6MjA4ODkyNTg3NX0.zOugNQrQuFjFPa6mOmGKl4PBrZFsODA8n9KWp824I8Q';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let CU=null,isAdmin=false,selModel='claude-sonnet-4-5',adminSelModel='claude-sonnet-4-5';
+let chatHist=[],secIdx=0,interviewDone=false,micRec=null,isRec=false;
+let currentDocId=null,fpStep=1,activeFuId=null,isFuMode=false,fuSystemCtx='';
+
+const MODELS=['claude-opus-4-5','claude-sonnet-4-5','gpt-4o','gpt-4o-mini'];
+const MODEL_LABELS={'claude-opus-4-5':'Claude Opus 4.5','claude-sonnet-4-5':'Claude Sonnet 4.5','gpt-4o':'GPT-4o','gpt-4o-mini':'GPT-4o Mini'};
+const MODEL_PROV={'claude-opus-4-5':'Anthropic','claude-sonnet-4-5':'Anthropic · Recommended','gpt-4o':'OpenAI','gpt-4o-mini':'OpenAI · Fast'};
+
+const SECS=[
+  {id:'client',lbl:'Client Identity',e:'👤'},
+  {id:'business',lbl:'Business Context',e:'🏢'},
+  {id:'problems',lbl:'Pain Points',e:'❗'},
+  {id:'goals',lbl:'Goals & Vision',e:'🎯'},
+  {id:'workflows',lbl:'Daily Workflows',e:'🔄'},
+  {id:'tools',lbl:'Tools & Apps',e:'🔧'},
+  {id:'ai_model',lbl:'AI Model Choice',e:'🧠'},
+  {id:'data',lbl:'Data & Privacy',e:'🔒'},
+  {id:'budget',lbl:'Budget & Timeline',e:'📊'},
+  {id:'delivery',lbl:'Delivery & Support',e:'🚀'},
+];
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+// ── PASSWORD TOGGLE ──
+function toggleEye(id){
+  const inp=document.getElementById(id);
+  const btn=inp.nextElementSibling;
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁';}
+}
+
+// ── MAGNETIC AURORA — cursor-reactive constellation with aurora waves ──
+(function(){
+function initAurora(canvas){
+  if(canvas._aurora) return;
+  canvas._aurora = true;
+  const ctx = canvas.getContext('2d');
+  let W, H, mx = -999, my = -999, inside = false;
+  const GAP = 26;
+
+  function resize(){
+    W = canvas.width  = canvas.offsetWidth  || 450;
+    H = canvas.height = canvas.offsetHeight || 700;
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+    if(!inside){ requestAnimationFrame(draw); return; }
+
+    const cols = Math.ceil(W / GAP) + 2;
+    const rows = Math.ceil(H / GAP) + 2;
+
+    for(let r = 0; r < rows; r++){
+      for(let c = 0; c < cols; c++){
+        const bx = c * GAP - (GAP / 2);
+        const by = r * GAP - (GAP / 2);
+        const dx = bx - mx, dy = by - my;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const radius = 120;
+        const strength = Math.max(0, 1 - dist / radius);
+
+        // push dots away from cursor
+        const push = strength * strength * 32;
+        const px = dist > 0.5 ? bx + (dx / dist) * push : bx;
+        const py = dist > 0.5 ? by + (dy / dist) * push : by;
+
+        // dot size pulses near cursor
+        const dotR = 1.4 + strength * 2.8;
+        // alpha brightens near cursor
+        const alpha = 0.12 + strength * 0.72;
+        // hue shifts gold → bright white-gold near cursor
+        const lit = 52 + strength * 28;
+
+        ctx.beginPath();
+        ctx.arc(px, py, dotR, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(44, 88%, ${lit}%, ${alpha})`;
+        ctx.fill();
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  const panel = canvas.parentElement;
+  panel.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    mx = e.clientX - r.left;
+    my = e.clientY - r.top;
+    inside = true;
+  });
+  panel.addEventListener('mouseleave', () => { inside = false; });
+
+  new ResizeObserver(resize).observe(canvas);
+  resize();
+  requestAnimationFrame(draw);
+}
+function initAll(){
+  document.querySelectorAll('.auth-brand-canvas').forEach(c=>{
+    if(!c._aurora) initAurora(c);
+  });
+}
+document.addEventListener('DOMContentLoaded', initAll);
+document.addEventListener('DOMContentLoaded', ()=>{
+  const orig = window.show;
+  if(orig) window.show = function(id){ orig(id); setTimeout(initAll,60); };
+});
+})();
+
+window.addEventListener('DOMContentLoaded',()=>{
+  buildWaves();buildModelUIs();
+  const s=localStorage.getItem('os_u');
+  setTimeout(()=>{
+    const ov=document.getElementById('loader');
+    ov.classList.add('out');
+    setTimeout(()=>ov.style.display='none',900);
+    if(s){try{CU=JSON.parse(s);loadDash();}catch{localStorage.removeItem('os_u');show('signinPage');}}
+    else show('signinPage');
+  },1800);
+});
+
+// ═══════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════
+function toggleTheme(){
+  const h=document.documentElement;
+  const t=h.getAttribute('data-theme')==='dark'?'light':'dark';
+  h.setAttribute('data-theme',t);
+  document.querySelectorAll('.theme-btn').forEach(b=>b.textContent=t==='dark'?'🌙':'☀️');
+}
+
+// ═══════════════════════════════════════════════
+// WAVEFORMS + MODELS
+// ═══════════════════════════════════════════════
+function buildWaves(){
+  ['wv1','wv2','wv3','wv4'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    for(let i=0;i<28;i++){
+      const b=document.createElement('div');b.className='wbar';
+      const h=15+Math.random()*85;
+      b.style.cssText=`height:${h}%;--wd:${(1.2+Math.random()).toFixed(2)}s;animation-delay:${(i*.06).toFixed(2)}s`;
+      el.appendChild(b);
+    }
+  });
+}
+
+function buildModelUIs(){
+  ['userModelSel','adminModelSel'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.innerHTML=MODELS.map(m=>`
+      <div class="model-opt ${m===selModel?'sel':''}" id="${id}_${m}" onclick="pickModel('${id}','${m}')">
+        <div class="mradio"></div>
+        <span class="mname">${MODEL_LABELS[m]}</span>
+        <span class="mprov">${MODEL_PROV[m]}</span>
+      </div>`).join('');
+  });
+}
+
+function pickModel(container,m){
+  if(container==='userModelSel')selModel=m;
+  else adminSelModel=m;
+  document.querySelectorAll(`#${container} .model-opt`).forEach(el=>{
+    el.classList.toggle('sel',el.id===`${container}_${m}`);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function show(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+
+function sv(v){
+  document.querySelectorAll('#dashPage [id^="view-"]').forEach(el=>el.style.display='none');
+  document.getElementById(`view-${v}`).style.display='block';
+  document.querySelectorAll('#dashPage .nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(`nv-${v}`)?.classList.add('active');
+  if(v==='home')loadHomeStats();
+  if(v==='docs')loadUserDocs();
+  if(v==='interview'&&chatHist.length===0)startInterview();
+  if(v==='profile'&&CU){document.getElementById('p_name').value=CU.full_name||'';document.getElementById('p_company').value=CU.company||'';}
+}
+
+function asv(v){
+  document.querySelectorAll('#adminPage [id^="aview-"]').forEach(el=>el.style.display='none');
+  document.getElementById(`aview-${v}`).style.display='block';
+  document.querySelectorAll('#adminPage .nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(`anv-${v}`)?.classList.add('active');
+  if(v==='ahome')loadAdminStats();
+  if(v==='ausers')loadAdminUsers();
+  if(v==='adocs')loadAdminDocs();
+  if(v==='afollowup')loadFollowUp();
+  if(v==='amodels')loadAdminKeys();
+  if(v==='asettings')loadSysSettings();
+}
+
+function showMsg(id,txt,t='error'){
+  const el=document.getElementById(id);if(!el)return;
+  el.textContent=txt;el.className=`msg ${t} show`;
+  setTimeout(()=>el.classList.remove('show'),5500);
+}
+
+// ═══════════════════════════════════════════════
+// AUTH — DB-based (no Supabase Auth)
+// ═══════════════════════════════════════════════
+async function doSignup(){
+  const name=document.getElementById('sn_name').value.trim();
+  const email=document.getElementById('sn_email').value.trim().toLowerCase();
+  const company=document.getElementById('sn_company').value.trim();
+  const pass=document.getElementById('sn_pass').value;
+  if(!name||!email||!pass)return showMsg('signupMsg','Please fill all required fields.');
+  if(pass.length<8)return showMsg('signupMsg','Password must be at least 8 characters.');
+  showMsg('signupMsg','Creating account…','success');
+  const{data:ex}=await sb.from('users').select('id').eq('email',email).maybeSingle();
+  if(ex)return showMsg('signupMsg','Email already registered. Please sign in.');
+  const{data:u,error}=await sb.from('users').insert({full_name:name,email,company,password:pass,created_at:new Date().toISOString()}).select().single();
+  if(error)return showMsg('signupMsg','Error: '+error.message);
+  CU=u;localStorage.setItem('os_u',JSON.stringify(u));loadDash();
+}
+
+async function doSignin(){
+  const email=document.getElementById('si_email').value.trim().toLowerCase();
+  const pass=document.getElementById('si_pass').value;
+  if(!email||!pass)return showMsg('signinMsg','Please enter email and password.');
+  showMsg('signinMsg','Signing in…','success');
+  const{data:u,error}=await sb.from('users').select('*').eq('email',email).eq('password',pass).maybeSingle();
+  if(error)return showMsg('signinMsg','Error: '+error.message);
+  if(!u)return showMsg('signinMsg','Incorrect email or password.');
+  CU=u;localStorage.setItem('os_u',JSON.stringify(u));loadDash();
+}
+
+async function doForgot(){
+  if(fpStep===1){
+    const email=document.getElementById('fp_email').value.trim().toLowerCase();
+    if(!email)return showMsg('forgotMsg','Please enter your email address.');
+    const{data:u}=await sb.from('users').select('id').eq('email',email).maybeSingle();
+    if(!u)return showMsg('forgotMsg','No account found with that email.');
+    document.getElementById('fp_newFields').style.display='block';
+    document.getElementById('fp_btn').textContent='Reset Password →';
+    showMsg('forgotMsg','Account found! Enter your new password.','success');
+    fpStep=2;
+  } else {
+    const email=document.getElementById('fp_email').value.trim().toLowerCase();
+    const p=document.getElementById('fp_pass').value;
+    const p2=document.getElementById('fp_pass2').value;
+    if(p.length<8)return showMsg('forgotMsg','Password must be at least 8 characters.');
+    if(p!==p2)return showMsg('forgotMsg','Passwords do not match.');
+    const{error}=await sb.from('users').update({password:p}).eq('email',email);
+    if(error)return showMsg('forgotMsg','Error: '+error.message);
+    showMsg('forgotMsg','Password reset! Please sign in.','success');
+    fpStep=1;document.getElementById('fp_newFields').style.display='none';
+    document.getElementById('fp_btn').textContent='Find Account →';
+    setTimeout(()=>show('signinPage'),1500);
+  }
+}
+
+function doAdminLogin(){
+  const u=document.getElementById('al_user').value.trim();
+  const p=document.getElementById('al_pass').value;
+  if(u==='originstudios'&&p==='originstudios2026'){isAdmin=true;show('adminPage');loadAdminStats();}
+  else showMsg('adminLoginMsg','Invalid admin credentials.');
+}
+
+function doLogout(){
+  localStorage.removeItem('os_u');CU=null;isAdmin=false;
+  chatHist=[];secIdx=0;interviewDone=false;
+  show('signinPage');
+}
+
+async function loadDash(){
+  show('dashPage');
+  if(CU){
+    const n=CU.full_name||CU.email||'User';
+    document.getElementById('sbName').textContent=n;
+    document.getElementById('sbAvatar').textContent=n[0].toUpperCase();
+    document.getElementById('p_name').value=CU.full_name||'';
+    document.getElementById('p_company').value=CU.company||'';
+  }
+
+  await loadHomeStats();
+  sv('home');
+}
+
+// ═══════════════════════════════════════════════
+// PROFILE / PASSWORD
+// ═══════════════════════════════════════════════
+async function saveProfile(){
+  const name=document.getElementById('p_name').value.trim();
+  const company=document.getElementById('p_company').value.trim();
+  const{error}=await sb.from('users').update({full_name:name,company}).eq('id',parseInt(CU.id));
+  if(error)return showMsg('profileMsg','Error: '+error.message);
+  CU.full_name=name;CU.company=company;
+  localStorage.setItem('os_u',JSON.stringify(CU));
+  document.getElementById('sbName').textContent=name;
+  document.getElementById('sbAvatar').textContent=name[0].toUpperCase();
+  showMsg('profileMsg','Profile updated.','success');
+}
+
+async function changePassword(){
+  const cur=document.getElementById('cp_cur').value;
+  const np=document.getElementById('cp_new').value;
+  const np2=document.getElementById('cp_new2').value;
+  if(!cur||!np)return showMsg('passMsg','Please fill all fields.');
+  if(np.length<8)return showMsg('passMsg','New password must be at least 8 characters.');
+  if(np!==np2)return showMsg('passMsg','Passwords do not match.');
+  if(cur!==CU.password)return showMsg('passMsg','Current password is incorrect.');
+  const{error}=await sb.from('users').update({password:np}).eq('id',parseInt(CU.id));
+  if(error)return showMsg('passMsg','Error: '+error.message);
+  CU.password=np;localStorage.setItem('os_u',JSON.stringify(CU));
+  showMsg('passMsg','Password changed successfully.','success');
+  document.getElementById('cp_cur').value='';document.getElementById('cp_new').value='';document.getElementById('cp_new2').value='';
+}
+
+// ═══════════════════════════════════════════════
+// HOME STATS
+// ═══════════════════════════════════════════════
+async function loadHomeStats(){
+  if(!CU)return;
+  const{data:docs}=await sb.from('blueprints').select('*').eq('user_id',parseInt(CU.id)).order('created_at',{ascending:false});
+  const now=new Date();
+  const tm=(docs||[]).filter(d=>new Date(d.created_at).getMonth()===now.getMonth()).length;
+  document.getElementById('stTotal').textContent=(docs||[]).length;
+  document.getElementById('stMonth').textContent=tm;
+  document.getElementById('stModel').textContent=selModel.replace('claude-','').replace('gpt-','GPT-');
+  const{data:st}=await sb.from('api_settings').select('*').eq('user_id',parseInt(CU.id)).maybeSingle();
+  const{data:ast}=await sb.from('admin_settings').select('*').eq('key_name','global').maybeSingle();
+  const hasKey=(st?.claude_key||st?.openai_key||ast?.claude_key||ast?.openai_key);
+  document.getElementById('stApi').textContent=hasKey?'✓ Ready':'⚠ No Key';
+  // check follow-up
+  const{data:fus}=await sb.from('followups').select('*').eq('user_id',parseInt(CU.id)).eq('status','pending');
+  if(fus&&fus.length>0){
+    document.getElementById('fuAlertHome').classList.add('show');
+    document.getElementById('fuAlertMsg').textContent=`You have ${fus.length} pending follow-up question${fus.length>1?'s':''} from the Origin Studios team.`;
+    document.getElementById('fuNotif').style.display='inline-block';
+  }
+  const recent=(docs||[]).slice(0,3);
+  const g=document.getElementById('recentDocs');
+  if(!recent.length){g.innerHTML=`<div class="empty"><div class="ei">📄</div><div class="et">No blueprints yet</div><div class="es">Start a new interview to create your first blueprint.</div></div>`;return;}
+  g.innerHTML=`<div class="doc-grid">${recent.map(renderDocCard).join('')}</div>`;
+}
+
+// ═══════════════════════════════════════════════
+// INTERVIEW
+// ═══════════════════════════════════════════════
+function renderSecProgress(){
+  const el=document.getElementById('secProg');if(!el)return;
+  el.innerHTML=SECS.map((s,i)=>`
+    <div class="si ${i<secIdx?'done-i':''} ${i===secIdx?'act-i':''}" id="sp${i}">
+      <div class="sdot ${i<secIdx?'done':''} ${i===secIdx?'act':''}"></div>
+      ${s.e} ${s.lbl}
+    </div>`).join('');
+  document.getElementById('totSec').textContent=SECS.length;
+  document.getElementById('curSec').textContent=Math.min(secIdx+1,SECS.length);
+  const pct=interviewDone?100:Math.round((secIdx/SECS.length)*100);
+  document.getElementById('oFill').style.width=pct+'%';
+  document.getElementById('progPct').textContent=pct+'%';
+}
+
+async function resetChat(){
+  chatHist=[];secIdx=0;interviewDone=false;
+  document.getElementById('chatMsgs').innerHTML='';
+  document.getElementById('genBtn').disabled=true;
+  if(CU) await sb.from('chat_sessions').delete().eq('user_id',parseInt(CU.id));
+  renderSecProgress();startInterview();
+}
+
+function buildSysPrompt(){
+  return `You are the Blueprint Architect for Origin Studios — a warm, intelligent consultant who helps businesses understand how AI can work for them. You are gathering information to design an OpenClaw AI agent deployment.
+
+CRITICAL RULES — READ CAREFULLY:
+- You are talking to a BUSINESS OWNER or MANAGER, not a developer. Speak like a smart friend, not a tech manual.
+- NEVER ask developer questions like: "Do you need single-agent or multi-agent?", "What orchestration do you prefer?", "Do you want async or sync execution?", "What's your API architecture?" — these mean nothing to most people.
+- NEVER use jargon: no "orchestration", "YAML", "pipeline", "vector DB", "RAG", "inference", "webhook" unless they use those words first.
+- Ask about PROBLEMS and OUTCOMES, not technical implementation. Let Origin Studios figure out the tech.
+- Ask max 2 questions per message. Be warm, curious, conversational.
+- Acknowledge what they say before moving on. Show you understood.
+- If they seem technical (use dev terms themselves), you can go slightly deeper — but still stay outcome-focused.
+
+WHAT YOU ARE GATHERING (10 sections — flow naturally, never announce section numbers):
+
+1. CLIENT IDENTITY
+   Ask: their name, what they do, their company/team size, their role.
+   Gauge: are they technical or non-technical? This shapes everything.
+   Good opener: "Let's start simply — tell me a bit about yourself and your business. What do you do day to day?"
+
+2. BUSINESS CONTEXT
+   Ask: what their business does, how their team operates, what a typical week looks like.
+   Goal: understand their world before suggesting anything.
+   Example: "Walk me through a typical week — what does your team spend most of their time on?"
+
+3. PAIN POINTS
+   Ask: what's frustrating, what takes too long, what feels like it should be easier.
+   Examples of good questions: "What's the one thing that eats up your team's time that you wish just happened automatically?" / "What breaks down most often in how your team works?"
+   NEVER frame this as "what automation do you need" — let them describe pain in their own words.
+
+4. GOALS & VISION
+   Ask: what success looks like, what would change if the problem was solved.
+   Example: "If we build this perfectly and it's working 6 months from now — what does your day look like differently?"
+
+5. DAILY WORKFLOWS & REPETITION
+   Ask: what tasks happen repeatedly (daily, weekly), what gets copy-pasted, what gets manually forwarded or typed out.
+   Example: "Are there things your team does over and over — like sending the same type of email, updating spreadsheets, or chasing people for updates?"
+   This is where you discover automation opportunities WITHOUT asking "what do you want to automate?"
+
+6. TOOLS & APPS THEY ALREADY USE
+   Ask: what software/platforms/apps they use today — email, calendar, WhatsApp, Slack, CRM, spreadsheets, etc.
+   Frame it naturally: "What tools does your team live in day to day? Like email, WhatsApp, any project management tools?"
+   This tells us what OpenClaw needs to connect to.
+
+7. AI MODEL CHOICE (IMPORTANT — handle this section with care and education)
+   Explain that their AI agent needs a "brain" — an AI model — and they have choices.
+   Walk them through this in a friendly, honest way:
+
+   THE OPTIONS:
+   a) Claude (Anthropic) — Excellent for writing, analysis, nuanced reasoning. Very safe and careful. Best for customer-facing or sensitive tasks. Needs an Anthropic API key (~$5–20/month for moderate use).
+   b) OpenAI (GPT-4o etc.) — Industry standard, very capable, huge ecosystem. Great all-rounder. Needs an OpenAI API key (similar pricing).
+   c) Free/Open models via OpenClaw — OpenClaw supports free open-source models like Llama 3, Mistral, Gemma (run locally or via free tiers). Zero API cost but may need more setup. Great for internal/private use or tight budgets.
+
+   Ask them:
+   - "Have you used ChatGPT or Claude before? What was your experience?"
+   - "Is cost a big factor, or is quality the priority?"
+   - "Is any of your data sensitive enough that you'd want it to never leave your own servers?" (this points toward local/open models)
+   
+   Give a simple recommendation based on their answers. Example: "Based on what you've told me, Claude sounds like a great fit because you're handling customer communications and need reliable, careful responses."
+   
+   Capture: preferred_model, api_key_situation, budget_sensitivity, privacy_needs
+
+8. DATA & PRIVACY
+   Ask in plain terms: "Does your work involve sensitive customer information, financial records, or anything regulated — like healthcare or legal data?"
+   If yes: note compliance needs (GDPR, HIPAA etc.) and flag that local/private model deployment may be needed.
+   Keep this conversational, not interrogative.
+
+9. BUDGET & TIMELINE
+   Be gentle and frame it as helpful, not gatekeeping.
+   "Do you have a rough sense of budget for this? Even a range helps us design the right solution — there are options from very lean to full enterprise."
+   Also ask: "Is there a deadline or milestone driving this — like a product launch or a specific date?"
+
+10. DELIVERY & SUPPORT
+    Ask: who will use the system day-to-day, who is technical enough to manage it, do they want training, how will they measure success.
+    Example: "Once this is built — who on your team would be the main person using or managing it? And how would you know if it's working well?"
+
+SIGNAL FOR COMPLETION:
+When all 10 sections are naturally covered, write "INTERVIEW_COMPLETE" at the very start of your response, then give a warm, confident summary of what you heard and what Origin Studios will build for them.
+
+STRUCTURED DATA TO CAPTURE (in your mind throughout):
+- client_name, role, company, industry, team_size, tech_level (non-technical / semi-technical / technical)
+- problems (list), goals (list), success_metrics
+- workflow_pain_points (list), repetitive_tasks (list)
+- tools_in_use (list), integrations_needed (list)
+- preferred_ai_model, api_key_status, model_rationale
+- data_sensitivity, compliance_needs, prefer_local_model
+- budget_range, timeline, priority_level
+- deployment_owner, support_needs, success_definition
+
+Current section index: ${secIdx}/10`;
+}
+
+async function startInterview(){
+  // Load stored chat history from DB first
+  if(CU){
+    const{data:sess}=await sb.from('chat_sessions').select('history,sec_idx,interview_done').eq('user_id',parseInt(CU.id)).maybeSingle();
+    if(sess&&sess.history){
+      try{
+        const stored=JSON.parse(sess.history);
+        if(stored&&stored.length>0){
+          chatHist=stored;
+          secIdx=sess.sec_idx||0;
+          interviewDone=sess.interview_done||false;
+          // Replay messages into UI without sending to AI
+          stored.forEach(m=>{
+            if(m.role==='assistant')addAIMsg(m.content,true);
+            else addUserMsg(m.content,true);
+          });
+          if(interviewDone)document.getElementById('genBtn').disabled=false;
+          renderSecProgress();
+          return; // don't show opening again
+        }
+      }catch(e){}
+    }
+  }
+  renderSecProgress();
+  const opening=`Hello! Welcome to Origin Studios Blueprint System. 👋
+
+I'm your Blueprint Architect — think of me as a friendly consultant who's here to understand your business needs and help us design the right AI solution for you.
+
+**This is a conversation, not a form.** Just talk to me naturally — there are no wrong answers.
+
+Let's start simple: **What's your name, and what do you do?**
+
+*(And don't worry if you're not technical — I'll guide you through everything in plain language.)*`;
+  addAIMsg(opening);
+  chatHist.push({role:'assistant',content:opening});
+  setChips(['I\'m in tech','I\'m in business/management','I\'m a freelancer','Tell me more first']);
+}
+
+async function sendMsg(){
+  const inp=document.getElementById('chatIn');
+  const txt=inp.value.trim();
+  if(!txt)return;
+  inp.value='';inp.style.height='auto';
+  setChips([]);
+  addUserMsg(txt);
+  chatHist.push({role:'user',content:txt});
+  document.getElementById('sendBtn').disabled=true;
+  showTyping();
+  try{
+    const reply=await callAI(chatHist);
+    hideTyping();
+    if(reply.startsWith('FOLLOWUP_COMPLETE')){
+      const clean=reply.replace('FOLLOWUP_COMPLETE','').trim();
+      addAIMsg(clean+'\n\n🔄 **Updating your blueprint with all new information…**');
+      if(activeFuId) await sb.from('followups').update({status:'resolved'}).eq('id',activeFuId);
+      activeFuId=null;isFuMode=false;fuSystemCtx='';
+      setTimeout(()=>genDoc(),1500);
+    } else if(reply.startsWith('INTERVIEW_COMPLETE')){
+      interviewDone=true;
+      secIdx=SECS.length;
+      document.getElementById('genBtn').disabled=false;
+      renderSecProgress();
+      const clean=reply.replace('INTERVIEW_COMPLETE','').trim();
+      addAIMsg(clean+'\n\n✅ **All done!** Click **Generate Blueprint** to create your comprehensive document.');
+    } else {
+      detectSecAdv(reply);
+      addAIMsg(reply);
+    }
+    chatHist.push({role:'assistant',content:reply});
+    // save chat to DB per session
+    if(CU) await sb.from('chat_sessions').upsert({user_id:parseInt(CU.id),history:JSON.stringify(chatHist),sec_idx:secIdx,interview_done:interviewDone,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+  }catch(e){
+    hideTyping();
+    addAIMsg('I ran into a connection issue. Please check with the admin team about API access.\n\nError: '+e.message);
+  }
+  document.getElementById('sendBtn').disabled=false;
+}
+
+function detectSecAdv(txt){
+  if(secIdx>=SECS.length-1)return;
+  // PRIMARY: drive progress from number of user messages sent
+  // 10 sections, ~10 user replies = 1 section per reply
+  const userMsgCount=chatHist.filter(m=>m.role==='user').length;
+  const expectedSec=Math.min(userMsgCount,SECS.length-1);
+  if(expectedSec>secIdx){
+    secIdx=expectedSec;
+    renderSecProgress();
+    return;
+  }
+  // SECONDARY: keyword bump for extra accuracy
+  const l=txt.toLowerCase();
+  const transitions=["let's move","moving on","let's talk","now i'd like","great, now","shifting to","next, let's","let's explore","let me ask"];
+  if(transitions.some(s=>l.includes(s))){
+    secIdx=Math.min(secIdx+1,SECS.length-1);
+    renderSecProgress();
+  }
+}
+
+async function callAI(hist){
+  const{data:ast}=await sb.from('admin_settings').select('*').eq('key_name','global').maybeSingle();
+  const cKey=ast?.claude_key;
+  const oKey=ast?.openai_key;
+  // Use follow-up system context if in follow-up mode, else normal interview prompt
+  const sysP=isFuMode?fuSystemCtx:buildSysPrompt();
+  const useClaude=selModel.includes('claude');
+  if(useClaude&&cKey)return callClaude(hist,cKey,sysP);
+  if(!useClaude&&oKey)return callOpenAI(hist,oKey,sysP);
+  if(cKey)return callClaude(hist,cKey,sysP);
+  if(oKey)return callOpenAI(hist,oKey,sysP);
+  return callClaudeInternal(hist,sysP);
+}
+
+async function callClaude(hist,key,sysP){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+    body:JSON.stringify({model:selModel.includes('claude')?selModel:'claude-sonnet-4-5',max_tokens:1000,system:sysP||buildSysPrompt(),messages:hist})
+  });
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
+  return d.content[0].text;
+}
+
+async function callOpenAI(hist,key,sysP){
+  const r=await fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({model:selModel.includes('gpt')?selModel:'gpt-4o',max_tokens:1000,messages:[{role:'system',content:sysP||buildSysPrompt()},...hist]})
+  });
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
+  return d.choices[0].message.content;
+}
+
+async function callClaudeInternal(hist,sysP){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sysP||buildSysPrompt(),messages:hist})
+  });
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message||'API error');
+  return d.content[0].text;
+}
+
+function addAIMsg(txt,replay){
+  const el=document.getElementById('chatMsgs');
+  const d=document.createElement('div');d.className='bubble';
+  d.innerHTML=`<div class="bav ai-bav">🎙️</div>
+  <div class="bcon">
+    <div class="bname">Blueprint Architect</div>
+    <div class="btxt">${fmtMsg(txt)}<button class="copy-btn" onclick="copyTxt(this)" title="Copy">⧉</button></div>
+  </div>`;
+  el.appendChild(d);if(!replay)el.scrollTop=el.scrollHeight;
+}
+
+function addUserMsg(txt,replay){
+  const el=document.getElementById('chatMsgs');
+  const ini=(CU?.full_name||CU?.email||'U')[0].toUpperCase();
+  const d=document.createElement('div');d.className='bubble user';
+  d.innerHTML=`<div class="bav u-bav">${ini}</div>
+  <div class="bcon">
+    <div class="bname">You</div>
+    <div class="btxt">${esc(txt)}<button class="copy-btn" onclick="copyTxt(this)" title="Copy">⧉</button></div>
+  </div>`;
+  el.appendChild(d);if(!replay)el.scrollTop=el.scrollHeight;
+}
+
+function showTyping(){
+  const el=document.getElementById('chatMsgs');
+  const d=document.createElement('div');d.className='bubble';d.id='typBubble';
+  d.innerHTML=`<div class="bav ai-bav">🎙️</div><div class="bcon"><div class="bname">Blueprint Architect</div><div class="typing-ind"><div class="td"></div><div class="td"></div><div class="td"></div></div></div>`;
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+}
+function hideTyping(){document.getElementById('typBubble')?.remove();}
+function fmtMsg(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,130)+'px';}
+function setChips(arr){document.getElementById('qchips').innerHTML=arr.map(c=>`<div class="chip" onclick="useChip('${c.replace(/'/g,"\\'")}'">${c}</div>`).join('');}
+function useChip(t){document.getElementById('chatIn').value=t;sendMsg();}
+function copyTxt(btn){const txt=btn.parentElement.innerText.replace('⧉','').trim();navigator.clipboard.writeText(txt);btn.textContent='✓';setTimeout(()=>btn.textContent='⧉',1500);}
+
+// MIC
+function toggleMic(){if(isRec)stopMic();else startMic();}
+function startMic(){
+  if(!navigator.mediaDevices)return alert('Microphone not supported.');
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    micRec=new MediaRecorder(stream);const chunks=[];
+    micRec.ondataavailable=e=>chunks.push(e.data);
+    micRec.onstop=()=>{
+      const blob=new Blob(chunks,{type:'audio/webm'});
+      if('webkitSpeechRecognition' in window||'SpeechRecognition' in window){
+        const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+        const r=new SR();r.onresult=e=>{document.getElementById('chatIn').value=e.results[0][0].transcript;};r.start();
+      }
+    };
+    micRec.start();isRec=true;
+    const b=document.getElementById('micBtn');b.classList.add('rec');b.textContent='⏹';
+  }).catch(()=>alert('Microphone access denied.'));
+}
+function stopMic(){
+  if(micRec){micRec.stop();micRec.stream?.getTracks().forEach(t=>t.stop());}
+  isRec=false;
+  const b=document.getElementById('micBtn');b.classList.remove('rec');b.textContent='🎤';
+}
+
+// ═══════════════════════════════════════════════
+// DOCUMENT GENERATION
+// ═══════════════════════════════════════════════
+async function genDoc(){
+  if(!CU)return;
+  const ov=document.createElement('div');ov.className='gen-overlay';
+  ov.innerHTML=`<div class="ld-bars"><div class="mb"></div><div class="mb"></div><div class="mb"></div><div class="mb"></div><div class="mb"></div><div class="mb"></div><div class="mb"></div><div class="mb"></div><div class="mb"></div></div><div class="gen-title">Generating Blueprint</div><div class="gen-sub">AI is crafting your comprehensive document…</div>`;
+  document.body.appendChild(ov);
+
+  try{
+    const transcript=chatHist.map(m=>`[${m.role.toUpperCase()}]: ${m.content}`).join('\n\n');
+    const prompt=`You are a senior technical architect at Origin Studios. Based on this client interview transcript, generate a COMPREHENSIVE, PROFESSIONAL OpenClaw Blueprint Document.
+
+TRANSCRIPT:
+${transcript}
+
+CRITICAL INSTRUCTIONS:
+1. Extract the REAL client name, company, industry etc. from the conversation — never use question labels
+2. The document must be detailed, specific, and based on what the client actually said
+3. Use proper formatting: headers, bullet lists, tables where appropriate
+4. Be specific about OpenClaw components: SOUL.md, HEARTBEAT.md, USER.md, MEMORY.md, Lobster workflows, heartbeat intervals, hook lifecycle, multi-agent orchestration, skill definitions
+5. If the client was non-technical, still produce technical specs — infer the technical requirements from their business needs
+6. Format with markdown: ## for sections, ### for subsections, - for bullets, | for tables
+7. FIRST LINE of your response MUST be: PROJECT_NAME: [Creative short name for this project, 2-5 words, based on the client's industry and goal. E.g. "SalesFlow AI", "MedTrack Intelligence", "LegalOps Automator"]
+   Then a blank line, then the document content.
+
+DOCUMENT STRUCTURE:
+
+## EXECUTIVE SUMMARY
+[2-3 paragraph overview of the client, their problem, and the proposed OpenClaw solution]
+
+## CLIENT PROFILE
+| Field | Details |
+|-------|---------|
+| Client Name | [extracted from conversation] |
+| Job Title | [extracted] |
+| Company | [extracted] |
+| Industry | [extracted] |
+| Team Size | [extracted] |
+| Technical Level | [technical/mixed/non-technical] |
+| Primary Goal | [one sentence] |
+
+## PROBLEM STATEMENT
+[What is broken today. Specific pain points extracted from the interview. Use bullet points for each pain point.]
+
+## PROJECT GOALS & SUCCESS METRICS
+| Goal | Success Metric | Target |
+|------|---------------|--------|
+[Fill with real goals from the conversation]
+
+## OPENCLAW ARCHITECTURE DESIGN
+
+### Agent Configuration
+[Single vs multi-agent, roles, purposes]
+
+### SOUL.md Specifications
+[For each agent, what goes in SOUL.md]
+
+### HEARTBEAT.md Configuration
+- Interval: [X minutes]
+- Checklist items: [list based on their automation needs]
+
+### MEMORY.md Strategy
+[What persistent context each agent needs]
+
+### Lane Queue Strategy
+[How requests are serialized]
+
+## TOOLS & INTEGRATIONS MAP
+| Tool/Service | Purpose | Integration Type |
+|-------------|---------|-----------------|
+[List all tools mentioned or inferred]
+
+## AUTOMATION & WORKFLOW DESIGN
+
+### Lobster YAML Workflow (Example)
+\`\`\`yaml
+name: [workflow name]
+steps:
+  - action: [step 1]
+  - action: [step 2]
+\`\`\`
+
+### Heartbeat Tasks
+[Recurring automated tasks]
+
+### Trigger Conditions
+[What events trigger which workflows]
+
+## MULTI-AGENT SYSTEM DESIGN (if applicable)
+[Orchestrator + sub-agents, communication protocol, spawn depth]
+
+## DATA ARCHITECTURE & SECURITY
+| Aspect | Details |
+|--------|---------|
+| Data Sensitivity | [level] |
+| Compliance | [requirements] |
+| Storage Strategy | [where data lives] |
+| Secrets Management | [approach] |
+| Audit Logging | [yes/no, what] |
+
+## TECHNICAL INFRASTRUCTURE
+- Hosting: [cloud/local/hybrid]
+- LLM Model: [which model and why]
+- Estimated Monthly API Cost: [range]
+- Scaling Strategy: [approach]
+
+## IMPLEMENTATION ROADMAP
+| Phase | Timeline | Deliverables |
+|-------|----------|-------------|
+| Phase 1: Foundation | Week 1–2 | [specific items] |
+| Phase 2: Core Agents | Week 3–4 | [specific items] |
+| Phase 3: Integrations | Week 5–6 | [specific items] |
+| Phase 4: Testing & Launch | Week 7–8 | [specific items] |
+
+## CONSTRAINTS & ASSUMPTIONS
+[List constraints and assumptions]
+
+## RISK ASSESSMENT
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+[List 3-5 real risks]
+
+## BUDGET ESTIMATE
+| Item | Estimated Cost |
+|------|---------------|
+[Break down costs]
+
+## NEXT STEPS
+1. [First action item]
+2. [Second action item]
+3. [Sign-off and approval]
+
+---
+*Document prepared by Origin Studios · OpenClaw Blueprint System · Confidential*`;
+
+    let content='';
+    const{data:st}=await sb.from('api_settings').select('*').eq('user_id',parseInt(CU.id)).maybeSingle();
+    const{data:ast}=await sb.from('admin_settings').select('*').eq('key_name','global').maybeSingle();
+    const cKey=st?.claude_key||ast?.claude_key;
+    const oKey=st?.openai_key||ast?.openai_key;
+    
+    if(cKey){
+      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':cKey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4096,messages:[{role:'user',content:prompt}]})});
+      const d=await r.json();if(d.error)throw new Error(d.error.message);content=d.content[0].text;
+    } else if(oKey){
+      const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+oKey},body:JSON.stringify({model:'gpt-4o',max_tokens:4096,messages:[{role:'user',content:prompt}]})});
+      const d=await r.json();if(d.error)throw new Error(d.error.message);content=d.choices[0].message.content;
+    } else {
+      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4096,messages:[{role:'user',content:prompt}]})});
+      const d=await r.json();if(d.error)throw new Error(d.error.message);content=d.content[0].text;
+    }
+
+    // Extract PROJECT_NAME from LLM response
+    let projectName='OpenClaw Blueprint';
+    let cleanContent=content;
+    const pnMatch=content.match(/^PROJECT_NAME:\s*(.+)/m);
+    if(pnMatch){
+      projectName=pnMatch[1].trim();
+      cleanContent=content.replace(/^PROJECT_NAME:[^\n]*\n?/,'').trim();
+    }
+    content=cleanContent;
+
+    // Extract client name from conversation
+    const clientName=extractClientName(chatHist)||'Client';
+
+    // Check if a blueprint already exists for this user — store as new version
+    const{data:existing}=await sb.from('blueprints').select('id,version').eq('user_id',parseInt(CU.id)).order('version',{ascending:false}).limit(1).maybeSingle();
+    const version=(existing?.version||0)+1;
+
+    const{data:doc,error}=await sb.from('blueprints').insert({
+      user_id:parseInt(CU.id),
+      title:projectName,
+      client_name:clientName,
+      content,
+      transcript:JSON.stringify(chatHist),
+      model_used:selModel,
+      version,
+      created_at:new Date().toISOString(),
+      sections_completed:secIdx
+    }).select().single();
+    
+    if(error)throw new Error(error.message);
+
+    ov.classList.add('out');setTimeout(()=>ov.remove(),700);
+    currentDocId=doc.id;
+    viewDocument(doc);
+
+  }catch(e){
+    ov.classList.add('out');setTimeout(()=>ov.remove(),700);
+    alert('Error generating blueprint: '+e.message);
+  }
+}
+
+function extractClientName(hist){
+  // Search all user messages for name patterns
+  const userMsgs=hist.filter(m=>m.role==='user');
+  for(const m of userMsgs){
+    const t=m.content;
+    const patterns=[
+      /(?:i'?m|my name is|i am|name'?s|call me)\s+([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)/i,
+      /^([A-Z][a-z]{1,15}\s[A-Z][a-z]{1,15})(?:[,\s]|$)/,
+      /([A-Z][a-z]+\s[A-Z][a-z]+)(?:\s*[-,]\s*(?:head|ceo|cto|director|manager|founder|engineer|product))/i
+    ];
+    for(const p of patterns){const m2=t.match(p);if(m2&&m2[1])return m2[1].trim();}
+  }
+  // Fallback: look in AI messages for quoted names
+  const aiMsgs=hist.filter(m=>m.role==='assistant');
+  for(const m of aiMsgs){
+    const match=m.content.match(/(?:nice to meet you|great to meet you|hello|hi)\s*,?\s*([A-Z][a-z]+)/i);
+    if(match)return match[1];
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════
+// DOCUMENTS
+// ═══════════════════════════════════════════════
+async function loadUserDocs(){
+  if(!CU)return;
+  // Check for pending follow-ups
+  const{data:fus}=await sb.from('followups').select('*').eq('user_id',parseInt(CU.id)).eq('status','pending');
+  const container=document.getElementById('docsContainer');
+  const{data:docs}=await sb.from('blueprints').select('*').eq('user_id',parseInt(CU.id)).order('created_at',{ascending:false});
+  
+  if(!docs||!docs.length){
+    container.innerHTML=`<div class="empty"><div class="ei">📄</div><div class="et">No blueprints yet</div><div class="es">Start an interview session to create your first blueprint.</div></div>`;
+    return;
+  }
+  
+  // Group by latest version per "session" — show all versions
+  let html='';
+  if(fus&&fus.length>0){
+    html+=`<div class="followup-banner show" style="margin-bottom:1.25rem">
+      <div class="fu-title">🔔 ${fus.length} Follow-up Question${fus.length>1?'s':''} Pending</div>
+      <div class="fu-msg">The Origin Studios team has additional questions about your blueprint. Please continue the interview to provide more details.</div>
+      <button class="btn-s" style="max-width:220px;margin-top:.5rem" onclick="openFollowUpChat()">Answer Questions →</button>
+    </div>`;
+  }
+  html+=`<div class="doc-grid">${docs.map(renderDocCard).join('')}</div>`;
+  container.innerHTML=html;
+}
+
+function renderDocCard(d){
+  const date=new Date(d.created_at).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+  return `<div class="doc-card" onclick="viewDocById('${d.id}')">
+    <div class="doc-type">📄 Blueprint <span class="version-badge">v${d.version||1}</span></div>
+    <div class="doc-title">${d.title}</div>
+    <div class="doc-client">${d.client_name||'—'}</div>
+    <div class="doc-meta">
+      <div class="dmi">📅 ${date}</div>
+      <div class="dmi">🤖 ${(d.model_used||'').substring(0,16)}</div>
+    </div>
+    <div class="doc-actions" onclick="event.stopPropagation()">
+      <button class="btn-sm" onclick="viewDocById('${d.id}')">View</button>
+      <button class="btn-sm" onclick="downloadDocById('${d.id}')">Download</button>
+
+    </div>
+  </div>`;
+}
+
+async function viewDocById(id){
+  const{data:doc}=await sb.from('blueprints').select('*').eq('id',id).single();
+  if(doc)viewDocument(doc);
+}
+
+function viewDocument(doc){
+  currentDocId=doc.id;
+  document.getElementById('modalTitle').textContent=doc.title;
+  document.getElementById('modalContent').innerHTML=`
+    <div class="dp-header">
+      <div class="dp-brand">Origin Studios · OpenClaw Blueprint System</div>
+      <h1>${doc.title}</h1>
+      <div class="dp-sub">Prepared by Origin Studios · ${new Date(doc.created_at).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</div>
+    </div>
+    <div class="dp-meta">
+      <div><div class="mkey">Client</div><div class="mval">${doc.client_name||'—'}</div></div>
+      <div><div class="mkey">Generated</div><div class="mval">${new Date(doc.created_at).toLocaleString()}</div></div>
+      <div><div class="mkey">AI Model</div><div class="mval">${doc.model_used||'—'}</div></div>
+      <div><div class="mkey">Version</div><div class="mval">v${doc.version||1} · ${doc.sections_completed||10}/10 sections</div></div>
+    </div>
+    ${renderDocContent(doc.content)}
+    <div class="dp-footer">ORIGIN STUDIOS CONFIDENTIAL · OpenClaw Blueprint · Not for redistribution</div>`;
+  document.getElementById('docModal').classList.add('open');
+}
+
+function renderDocContent(md){
+  if(!md)return'';
+  // Inline formatter: bold, italic, code, escaping
+  function il(t){
+    return String(t)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*([^*]+?)\*/g,'<em>$1</em>')
+      .replace(/`([^`]+?)`/g,'<code style="background:var(--surface3);padding:.12em .35em;border-radius:3px;font-family:var(--fm);font-size:.83em;color:var(--gold)">$1</code>');
+  }
+  // Parse table block into HTML table
+  function parseTable(rows){
+    if(!rows.length)return'';
+    let t='<table>';
+    let headerDone=false;
+    for(const row of rows){
+      // Skip separator rows (|---|---|)
+      if(row.every(c=>/^[\s:\-]+$/.test(c)))continue;
+      const tag=headerDone?'td':'th';
+      t+=`<tr>${row.map(c=>`<${tag}>${il(c.trim())}</${tag}>`).join('')}</tr>`;
+      headerDone=true;
+    }
+    return t+'</table>';
+  }
+
+  const lines=md.split('\n');
+  let html='';
+  let i=0;
+
+  while(i<lines.length){
+    const line=lines[i];
+    const raw=line;
+
+    // ── CODE BLOCK ──
+    if(raw.trimStart().startsWith('```')){
+      i++;
+      let code='';
+      while(i<lines.length&&!lines[i].trimStart().startsWith('```')){
+        code+=lines[i]+'\n';i++;
+      }
+      i++; // skip closing ```
+      html+=`<div class="sec-block"><pre style="margin:0;white-space:pre-wrap;word-break:break-all;font-family:var(--fm);font-size:.8rem;color:var(--gold);line-height:1.6">${il(code.trimEnd())}</pre></div>`;
+      continue;
+    }
+
+    // ── TABLE (collect all consecutive | lines) ──
+    if(raw.trimStart().startsWith('|')){
+      const trows=[];
+      while(i<lines.length&&lines[i].trimStart().startsWith('|')){
+        const cells=lines[i].split('|').slice(1,-1);
+        trows.push(cells);i++;
+      }
+      html+=parseTable(trows);
+      continue;
+    }
+
+    // ── HEADINGS ──
+    if(/^#{1,6} /.test(raw)){
+      const m=raw.match(/^(#{1,6}) (.*)/);
+      const lvl=m[1].length;
+      if(lvl<=2) html+=`<h2>${il(m[2])}</h2>`;
+      else        html+=`<h3>${il(m[2])}</h3>`;
+      i++;continue;
+    }
+
+    // ── HR ──
+    if(/^---+\s*$/.test(raw.trim())){
+      html+=`<hr style="border:none;border-top:1px solid var(--border);margin:1.75rem 0">`;
+      i++;continue;
+    }
+
+    // ── UNORDERED LIST (collect block) ──
+    if(/^(\s*)[-*+] /.test(raw)){
+      html+='<ul>';
+      while(i<lines.length&&/^(\s*)[-*+] /.test(lines[i])){
+        const indent=lines[i].match(/^(\s*)/)[1].length;
+        const txt=lines[i].replace(/^\s*[-*+] /,'');
+        html+=`<li style="margin-left:${Math.floor(indent/2)*16}px">${il(txt)}</li>`;
+        i++;
+      }
+      html+='</ul>';
+      continue;
+    }
+
+    // ── ORDERED LIST ──
+    if(/^\d+\. /.test(raw)){
+      html+='<ol>';
+      while(i<lines.length&&/^\d+\. /.test(lines[i])){
+        html+=`<li>${il(lines[i].replace(/^\d+\. /,''))}</li>`;
+        i++;
+      }
+      html+='</ol>';
+      continue;
+    }
+
+    // ── BLANK LINE ──
+    if(raw.trim()===''){
+      html+='<div style="height:.45rem"></div>';
+      i++;continue;
+    }
+
+    // ── PARAGRAPH ──
+    html+=`<p>${il(raw)}</p>`;
+    i++;
+  }
+  return html;
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+async function downloadCurrent(){
+  if(!currentDocId)return;
+  const{data:doc}=await sb.from('blueprints').select('*').eq('id',currentDocId).single();
+  if(!doc)return;
+  const txt=`ORIGIN STUDIOS — OPENCLAW BLUEPRINT\n${'='.repeat(50)}\n\n${doc.title}\nVersion: v${doc.version||1}\nGenerated: ${new Date(doc.created_at).toLocaleString()}\nClient: ${doc.client_name}\nModel: ${doc.model_used}\n\n${'='.repeat(50)}\n\n${doc.content}\n\n${'='.repeat(50)}\nORIGIN STUDIOS CONFIDENTIAL`;
+  const blob=new Blob([txt],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`${doc.title.replace(/[^a-z0-9]/gi,'_')}_v${doc.version||1}.txt`;a.click();
+}
+async function downloadDocById(id){currentDocId=id;await downloadCurrent();}
+
+async function emailCurrent(){
+  if(!currentDocId)return;
+  const{data:doc}=await sb.from('blueprints').select('*').eq('id',currentDocId).single();
+  const{data:cfg}=await sb.from('admin_settings').select('notif_email').eq('key_name','global').maybeSingle();
+  const email=cfg?.notif_email;
+  if(!email){alert('No notification email configured. Please ask the admin to set one up.');return;}
+  // Mailto fallback (real email sending needs a backend/edge function)
+  const sub=encodeURIComponent(doc.title+' — Origin Studios Blueprint');
+  const body=encodeURIComponent(`Blueprint: ${doc.title}\nClient: ${doc.client_name}\nVersion: v${doc.version||1}\nDate: ${new Date(doc.created_at).toLocaleString()}\n\nDocument content attached (see download).`);
+  window.open(`mailto:${email}?subject=${sub}&body=${body}`);
+  alert(`Email client opened with blueprint details. To: ${email}\n\nFor automated email delivery, configure an email service in the admin panel.`);
+}
+async function emailDocById(id){currentDocId=id;await emailCurrent();}
+
+// ═══════════════════════════════════════════════
+// FOLLOW-UP (USER SIDE)
+// ═══════════════════════════════════════════════
+async function openFollowUpChat(){
+  const{data:fus}=await sb.from('followups').select('*').eq('user_id',parseInt(CU.id)).eq('status','pending').order('created_at',{ascending:false}).limit(1).maybeSingle();
+  if(!fus)return;
+  activeFuId=fus.id;
+  // Load latest blueprint for context
+  const{data:latestDoc}=await sb.from('blueprints').select('content,title,client_name').eq('user_id',parseInt(CU.id)).order('version',{ascending:false}).limit(1).maybeSingle();
+  // Load stored chat history
+  const{data:sess}=await sb.from('chat_sessions').select('history').eq('user_id',parseInt(CU.id)).maybeSingle();
+  const prevHist=sess?.history?JSON.parse(sess.history):[];
+
+  // Mark as in-progress
+  await sb.from('followups').update({status:'in_progress'}).eq('id',fus.id);
+  document.getElementById('fuNotif').style.display='none';
+  
+  // Switch to interview view and clear display
+  sv('interview');
+  document.getElementById('chatMsgs').innerHTML='';
+  
+  // Build context-aware follow-up prompt for AI
+  const fuSystemCtx=`FOLLOW-UP MODE: You have the following context:
+
+PREVIOUS BLUEPRINT:
+Title: ${latestDoc?.title||'Unknown'}
+Client: ${latestDoc?.client_name||'Unknown'}
+Content Summary: ${(latestDoc?.content||'').substring(0,2000)}...
+
+ADMIN FOLLOW-UP QUESTIONS TO EXPLORE:
+${fus.questions}
+
+INSTRUCTIONS:
+- You already know this client from the previous conversation
+- Greet them warmly and mention you have a few follow-up questions from the team
+- Ask the follow-up questions ONE AT A TIME, naturally and conversationally
+- Wait for each answer before asking the next question
+- Do NOT list all questions at once
+- After all questions are answered, say "FOLLOWUP_COMPLETE" at the start of your response
+- Be warm, reference what they told you before`;
+
+  // Set special mode
+  chatHist=[{role:'user',content:'[SYSTEM: Follow-up mode. Context: '+fuSystemCtx+']'}];
+  
+  // Get AI to start the follow-up naturally
+  showTyping();
+  document.getElementById('sendBtn').disabled=true;
+  try{
+    const{data:ast}=await sb.from('admin_settings').select('*').eq('key_name','global').maybeSingle();
+    const cKey=ast?.claude_key;const oKey=ast?.openai_key;
+    let reply='';
+    const initMsg=[{role:'user',content:'Start the follow-up conversation. Greet the client warmly, briefly mention you have a few follow-up questions, and ask only the FIRST question from the follow-up list.'}];
+    const sysP=fuSystemCtx;
+    if(cKey){
+      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':cKey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:sysP,messages:initMsg})});
+      const d=await r.json();reply=d.content[0].text;
+    } else if(oKey){
+      const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+oKey},body:JSON.stringify({model:'gpt-4o',max_tokens:600,messages:[{role:'system',content:sysP},...initMsg]})});
+      const d=await r.json();reply=d.choices[0].message.content;
+    } else {
+      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:sysP,messages:initMsg})});
+      const d=await r.json();reply=d.content[0].text;
+    }
+    hideTyping();
+    chatHist=[{role:'assistant',content:reply}];
+    addAIMsg(reply);
+    // Store follow-up system context for subsequent messages
+    chatHist.fuContext=fuSystemCtx;
+    chatHist.isFuMode=true;
+    chatHist.fuQuestions=fus.questions;
+    chatHist.prevDoc=latestDoc?.content||'';
+  }catch(e){hideTyping();addAIMsg('Follow-up session ready. The team has questions: \n\n'+fus.questions);}
+  document.getElementById('sendBtn').disabled=false;
+}
+
+// ═══════════════════════════════════════════════
+// SETTINGS (USER — model only, no API key UI)
+// ═══════════════════════════════════════════════
+async function loadUserSettings(){
+  if(!CU)return;
+  // Pull global admin default model
+  const{data:ast}=await sb.from('admin_settings').select('default_model').eq('key_name','global').maybeSingle();
+  if(ast?.default_model){selModel=ast.default_model;}
+}
+
+// ═══════════════════════════════════════════════
+// ADMIN — STATS
+// ═══════════════════════════════════════════════
+async function loadAdminStats(){
+  const{count:uc}=await sb.from('users').select('*',{count:'exact',head:true});
+  const{count:dc}=await sb.from('blueprints').select('*',{count:'exact',head:true});
+  const{count:fuc}=await sb.from('followups').select('*',{count:'exact',head:true}).eq('status','pending');
+  const{data:ast}=await sb.from('admin_settings').select('*').eq('key_name','global').maybeSingle();
+  document.getElementById('adStUsers').textContent=uc||0;
+  document.getElementById('adStDocs').textContent=dc||0;
+  document.getElementById('adStModel').textContent=ast?.default_model||'claude-sonnet-4-5';
+  document.getElementById('adStFu').textContent=fuc||0;
+}
+
+// ═══════════════════════════════════════════════
+// ADMIN — USERS
+// ═══════════════════════════════════════════════
+async function loadAdminUsers(){
+  const{data:users}=await sb.from('users').select('*').order('created_at',{ascending:false});
+  const tb=document.getElementById('usersTbody');
+  if(!users||!users.length){tb.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem">No users</td></tr>`;return;}
+  tb.innerHTML=(await Promise.all(users.map(async u=>{
+    const{count}=await sb.from('blueprints').select('*',{count:'exact',head:true}).eq('user_id',u.id);
+    const d=new Date(u.created_at).toLocaleDateString();
+    return`<tr>
+      <td>${u.full_name||'—'}</td>
+      <td style="font-family:var(--fm);font-size:.8rem">${u.email}</td>
+      <td>${u.company||'—'}</td>
+      <td style="font-family:var(--fm);font-size:.75rem">${d}</td>
+      <td><span class="badge gold">${count||0}</span></td>
+      <td style="display:flex;gap:.4rem">
+        <button class="btn-sm" onclick="showEditUser(${u.id},'${esc(u.full_name||'')}','${esc(u.company||'')}')">Edit</button>
+        <button class="btn-sm" style="color:var(--red)" onclick="adminDelUser(${u.id})">Delete</button>
+      </td>
+    </tr>`;
+  }))).join('');
+}
+
+function showAddUserModal(){document.getElementById('addUserModal').classList.add('open');}
+function showEditUser(id,name,company){
+  document.getElementById('eu_id').value=id;
+  document.getElementById('eu_name').value=name;
+  document.getElementById('eu_company').value=company;
+  document.getElementById('eu_pass').value='';
+  document.getElementById('editUserModal').classList.add('open');
+}
+
+async function adminAddUser(){
+  const name=document.getElementById('au_name').value.trim();
+  const email=document.getElementById('au_email').value.trim().toLowerCase();
+  const company=document.getElementById('au_company').value.trim();
+  const pass=document.getElementById('au_pass').value;
+  if(!name||!email||!pass)return showMsg('addUserMsg','Fill all fields.');
+  if(pass.length<8)return showMsg('addUserMsg','Password min 8 chars.');
+  const{error}=await sb.from('users').insert({full_name:name,email,company,password:pass,created_at:new Date().toISOString()});
+  if(error)return showMsg('addUserMsg','Error: '+error.message);
+  closeModal('addUserModal');loadAdminUsers();loadAdminStats();
+}
+
+async function adminSaveUser(){
+  const id=parseInt(document.getElementById('eu_id').value);
+  const name=document.getElementById('eu_name').value.trim();
+  const company=document.getElementById('eu_company').value.trim();
+  const pass=document.getElementById('eu_pass').value;
+  const upd={full_name:name,company};
+  if(pass&&pass.length>=8)upd.password=pass;
+  else if(pass&&pass.length>0)return showMsg('editUserMsg','Password must be at least 8 chars.');
+  const{error}=await sb.from('users').update(upd).eq('id',id);
+  if(error)return showMsg('editUserMsg','Error: '+error.message);
+  closeModal('editUserModal');loadAdminUsers();
+}
+
+async function adminDelUser(id){
+  if(!confirm('Delete this user and ALL their data?'))return;
+  await sb.from('followups').delete().eq('user_id',id);
+  await sb.from('blueprints').delete().eq('user_id',id);
+  await sb.from('api_settings').delete().eq('user_id',id);
+  await sb.from('chat_sessions').delete().eq('user_id',id);
+  await sb.from('users').delete().eq('id',id);
+  loadAdminUsers();loadAdminStats();
+}
+
+// ═══════════════════════════════════════════════
+// ADMIN — DOCS
+// ═══════════════════════════════════════════════
+async function loadAdminDocs(){
+  const{data:docs}=await sb.from('blueprints').select('*, users(full_name,email)').order('created_at',{ascending:false});
+  const tb=document.getElementById('docsTbody');
+  if(!docs||!docs.length){tb.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem">No blueprints</td></tr>`;return;}
+  tb.innerHTML=docs.map(d=>{
+    const date=new Date(d.created_at).toLocaleDateString();
+    return`<tr>
+      <td>${d.title}</td>
+      <td style="font-style:italic">${d.client_name||'—'}</td>
+      <td style="font-family:var(--fm);font-size:.75rem">${d.users?.email||'—'}</td>
+      <td><span class="version-badge">v${d.version||1}</span></td>
+      <td style="font-family:var(--fm);font-size:.75rem">${date}</td>
+      <td style="display:flex;gap:.35rem">
+        <button class="btn-sm" onclick="adminViewDoc('${d.id}')">View</button>
+        <button class="btn-sm" onclick="adminDlDoc('${d.id}')">DL</button>
+        <button class="btn-sm" style="color:var(--red)" onclick="adminDelDoc('${d.id}')">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function adminViewDoc(id){currentDocId=id;const{data:doc}=await sb.from('blueprints').select('*').eq('id',id).single();if(doc)viewDocument(doc);}
+async function adminDlDoc(id){currentDocId=id;await downloadCurrent();}
+async function adminDelDoc(id){
+  if(!confirm('Delete this blueprint permanently?'))return;
+  await sb.from('blueprints').delete().eq('id',id);
+  loadAdminDocs();loadAdminStats();
+}
+
+// ═══════════════════════════════════════════════
+// ADMIN — FOLLOW-UP
+// ═══════════════════════════════════════════════
+async function loadFollowUp(){
+  // Populate doc selector
+  const{data:docs}=await sb.from('blueprints').select('id,title,client_name,user_id').order('created_at',{ascending:false});
+  const sel=document.getElementById('fu_docSel');
+  sel.innerHTML='<option value="">— Select a blueprint —</option>'+
+    (docs||[]).map(d=>`<option value="${d.id}" data-uid="${d.user_id}">${d.title} (${d.client_name||'unknown'})</option>`).join('');
+  // Load existing followups
+  const{data:fus}=await sb.from('followups').select('*, blueprints(title,client_name)').order('created_at',{ascending:false});
+  const tb=document.getElementById('fuTbody');
+  if(!fus||!fus.length){tb.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem">No follow-ups sent yet</td></tr>`;return;}
+  tb.innerHTML=fus.map(f=>{
+    const date=new Date(f.created_at).toLocaleDateString();
+    const statusColor={pending:'gold',in_progress:'gray',resolved:'gray'}[f.status]||'gray';
+    return`<tr>
+      <td>${f.blueprints?.title||'—'}</td>
+      <td style="font-style:italic">${f.blueprints?.client_name||'—'}</td>
+      <td style="font-size:.82rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.questions}</td>
+      <td><span class="badge ${statusColor}">${f.status}</span></td>
+      <td style="font-family:var(--fm);font-size:.72rem">${date}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function sendFollowUp(){
+  const sel=document.getElementById('fu_docSel');
+  const docId=sel.value;
+  const uid=sel.options[sel.selectedIndex]?.dataset?.uid;
+  const questions=document.getElementById('fu_questions').value.trim();
+  if(!docId)return showMsg('fuMsg','Please select a blueprint.');
+  if(!questions)return showMsg('fuMsg','Please enter your follow-up questions.');
+  const{error}=await sb.from('followups').insert({blueprint_id:docId,user_id:parseInt(uid),questions,status:'pending',created_at:new Date().toISOString()});
+  if(error)return showMsg('fuMsg','Error: '+error.message);
+  document.getElementById('fu_questions').value='';
+  showMsg('fuMsg','Follow-up questions sent to client successfully.','success');
+  loadFollowUp();loadAdminStats();
+}
+
+// ═══════════════════════════════════════════════
+// ADMIN — MODELS & KEYS
+// ═══════════════════════════════════════════════
+async function loadAdminKeys(){
+  const{data:ast}=await sb.from('admin_settings').select('*').eq('key_name','global').maybeSingle();
+  if(ast?.claude_key)document.getElementById('a_claudeKey').value=ast.claude_key;
+  if(ast?.openai_key)document.getElementById('a_openaiKey').value=ast.openai_key;
+  if(ast?.default_model){adminSelModel=ast.default_model;buildModelUIs();}
+}
+
+async function saveAdminKeys(){
+  const cKey=document.getElementById('a_claudeKey').value.trim()||null;
+  const oKey=document.getElementById('a_openaiKey').value.trim()||null;
+  const{error}=await sb.from('admin_settings').upsert({key_name:'global',claude_key:cKey,openai_key:oKey},{onConflict:'key_name'});
+  if(error)return showMsg('aKeysMsg','Error: '+error.message);
+  showMsg('aKeysMsg','API keys saved.','success');
+}
+
+async function deleteAdminKey(type){
+  const upd=type==='claude'?{claude_key:null}:{openai_key:null};
+  await sb.from('admin_settings').update(upd).eq('key_name','global');
+  if(type==='claude')document.getElementById('a_claudeKey').value='';
+  else document.getElementById('a_openaiKey').value='';
+  showMsg('aKeysMsg',`${type==='claude'?'Claude':'OpenAI'} key removed.`,'success');
+}
+
+async function saveAdminModel(){
+  const{error}=await sb.from('admin_settings').upsert({key_name:'global',default_model:adminSelModel},{onConflict:'key_name'});
+  if(error)return;
+  showMsg('aKeysMsg','Default model saved.','success');loadAdminStats();
+}
+
+// ═══════════════════════════════════════════════
+// ADMIN — SYSTEM SETTINGS
+// ═══════════════════════════════════════════════
+async function loadSysSettings(){
+  const{data:ast}=await sb.from('admin_settings').select('notif_email').eq('key_name','global').maybeSingle();
+  if(ast?.notif_email)document.getElementById('a_notifEmail').value=ast.notif_email;
+}
+
+async function saveNotifEmail(){
+  const email=document.getElementById('a_notifEmail').value.trim();
+  if(!email)return showMsg('aSysMsg','Please enter an email address.');
+  const{error}=await sb.from('admin_settings').upsert({key_name:'global',notif_email:email},{onConflict:'key_name'});
+  if(error)return showMsg('aSysMsg','Error: '+error.message);
+  showMsg('aSysMsg','Notification email saved.','success');
+}
+</script>
+
+<!--
+═══════════════════════════════════════════════════
+SUPABASE SQL — Run in SQL Editor (drop old tables first)
+═══════════════════════════════════════════════════
+
+DROP TABLE IF EXISTS followups CASCADE;
+DROP TABLE IF EXISTS chat_sessions CASCADE;
+DROP TABLE IF EXISTS api_settings CASCADE;
+DROP TABLE IF EXISTS blueprints CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS admin_settings CASCADE;
+
+CREATE TABLE users (
+  id BIGSERIAL PRIMARY KEY,
+  full_name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  company TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE blueprints (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT, client_name TEXT, content TEXT,
+  transcript TEXT, model_used TEXT,
+  version INT DEFAULT 1,
+  sections_completed INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE api_settings (
+  user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  claude_key TEXT, openai_key TEXT,
+  model TEXT DEFAULT 'claude-sonnet-4-5'
+);
+
+CREATE TABLE admin_settings (
+  key_name TEXT PRIMARY KEY,
+  claude_key TEXT, openai_key TEXT,
+  default_model TEXT DEFAULT 'claude-sonnet-4-5',
+  notif_email TEXT
+);
+
+CREATE TABLE followups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  blueprint_id UUID REFERENCES blueprints(id) ON DELETE CASCADE,
+  user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+  questions TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE chat_sessions (
+  user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  history TEXT,
+  sec_idx INT DEFAULT 0,
+  interview_done BOOLEAN DEFAULT false,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE blueprints DISABLE ROW LEVEL SECURITY;
+ALTER TABLE api_settings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_settings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE followups DISABLE ROW LEVEL SECURITY;
+ALTER TABLE chat_sessions DISABLE ROW LEVEL SECURITY;
+
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon;
+-->
+</body>
+</html>
