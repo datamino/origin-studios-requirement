@@ -125,7 +125,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 /* ── DASHBOARD ── */
 .dashboard{display:grid;grid-template-columns:256px 1fr;min-height:100vh}
-.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.5rem 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.5rem 0;position:sticky;top:0;height:100vh;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none}
+.sidebar::-webkit-scrollbar{display:none}
 .sb-logo{padding:0 1.25rem 1.5rem;border-bottom:1px solid var(--border);margin-bottom:1.2rem}
 .sb-mark{width:64px;height:64px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:.6rem}
 .sb-name{font-family:var(--fd);font-weight:800;font-size:1.05rem;letter-spacing:-.02em;color:var(--white)}
@@ -144,7 +145,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .u-role{font-family:var(--fm);font-size:.6rem;color:var(--text-muted)}
 .btn-out{background:none;border:1px solid var(--border2);color:var(--text-muted);font-family:var(--fm);font-size:.62rem;padding:.28rem .55rem;cursor:pointer;border-radius:var(--r);transition:all .2s}
 .btn-out:hover{border-color:var(--red);color:var(--red)}
-.main-content{background:var(--black);overflow-y:auto}
+.main-content{background:var(--black);overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none}
+.main-content::-webkit-scrollbar{display:none}
 .ch{padding:1.75rem 2.25rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .ch-title{font-family:var(--fd);font-size:1.5rem;font-weight:800;letter-spacing:-.03em}
 .ch-sub{font-family:var(--fm);font-size:.7rem;color:var(--text-muted);margin-top:.15rem;letter-spacing:.07em}
@@ -258,7 +260,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .modal-title{font-family:var(--fd);font-weight:700;font-size:1.05rem}
 .modal-cls{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.15rem;padding:.2rem;transition:color .2s}
 .modal-cls:hover{color:var(--white)}
-.modal-body{flex:1;overflow-y:auto;padding:2rem}
+.modal-body{flex:1;overflow-y:auto;padding:2rem;scrollbar-width:none;-ms-overflow-style:none}
+.modal-body::-webkit-scrollbar{display:none}
 .modal-ft{padding:.9rem 1.4rem;border-top:1px solid var(--border);display:flex;gap:.65rem;justify-content:flex-end;flex-wrap:wrap}
 
 /* ── DOC PREVIEW ── */
